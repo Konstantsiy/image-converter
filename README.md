@@ -12,3 +12,5 @@ the original image and the processed one.
 - /user/logout - log out of the user [GET]
 - /convert - convert photo [POST]
 - /download/{photoId} - download needed photo [GET]
+# Database Scheme
+![alt text](./docs/db.png)
