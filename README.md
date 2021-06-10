@@ -10,7 +10,7 @@ the original image and the processed one.
 - /user/login - user authorization [POST]
 - /user/signup - user registration [POST]
 - /user/logout - log out of the user [GET]
-- /conversion - convert needed photo [POST]
+- /conversion - convert needed image [POST]
 - /photos/{photoId} - get needed image [GET]
 # Database Scheme
 ![alt text](./docs/db.png)
