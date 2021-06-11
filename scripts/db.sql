@@ -56,6 +56,6 @@ create table if not exists converter.requests (
     updated timestamp without time zone default current_timestamp not null,
 
     foreign key (user_id) references converter.users(id),
-    foreign key (source_id) references converter.requests(id),
-    foreign key (target_id) references converter.requests(id)
+    foreign key (source_id) references converter.images(id),
+    foreign key (target_id) references converter.images(id)
 );
