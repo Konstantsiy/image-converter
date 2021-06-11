@@ -1,12 +1,19 @@
-create extension if not exists "uuid-ossp";
 create schema if not exists converter;
+
+do $$
+    begin
+        if not exists(select 1 from pg_extension where extname = 'uuid-ossp') then
+            create extension "uuid-ossp";
+        end if;
+    end
+$$;
 
 do $$
     begin
         if not exists(select 1 from pg_type where typname = 'file_format') then
             create type file_format as enum ('jpeg', 'png');
         end if;
-    end;
+    end
 $$;
 
 do $$
@@ -14,7 +21,7 @@ do $$
         if not exists(select 1 from pg_type where typname = 'status') then
             create type status as enum ('queued', 'processed', 'failed', 'done');
         end if;
-    end;
+    end
 $$;
 
 create table if not exists converter.users (
