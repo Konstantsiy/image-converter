@@ -46,7 +46,8 @@ create table if not exists converter.images (
 create table if not exists converter.requests (
     id uuid default uuid_generate_v1() primary key,
     user_id uuid not null,
-    image_id uuid not null,
+    source_id uuid not null,
+    target_id uuid not null,
     source_format file_format not null,
     target_format file_format not null,
     ratio int check ( ratio > 0  and ratio < 100) not null,
@@ -55,5 +56,6 @@ create table if not exists converter.requests (
     updated timestamp without time zone default current_timestamp not null,
 
     foreign key (user_id) references converter.users(id),
-    foreign key (image_id) references converter.requests(id)
+    foreign key (source_id) references converter.requests(id),
+    foreign key (target_id) references converter.requests(id)
 );
