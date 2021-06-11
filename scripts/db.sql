@@ -1,3 +1,9 @@
+select 'create database ita'
+where not exists(select from pg_database where datname = 'ita');
+\gexec
+
+\c ita
+
 create schema if not exists converter;
 
 do $$
