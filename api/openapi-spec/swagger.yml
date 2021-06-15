@@ -144,12 +144,13 @@ paths:
                   link:
                     type: string
                     description: link for download each available file in AWS S3 bucket
-              example: http(s)://s3.amazonaws.com/<bucket>/<object>
+              example:
+                link: http(s)://s3.amazonaws.com/path/to/the/file/file_name.extension # todo
         400:
           $ref: '#/components/responses/BadRequest'
         401:
           $ref: '#/components/responses/Unauthorized'
-        '404':
+        404:
           $ref: '#/components/responses/NotFound'
         500:
           $ref: '#/components/responses/InternalServerError'
@@ -198,6 +199,9 @@ components:
           format: integer
         message:
           type: string
+      example:
+        statusCode: 400
+        message: The request could not be understood by the server due to malformed syntax
   # Security scheme definitions
   securirySchemes:
     barierAuth:
