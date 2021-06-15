@@ -141,7 +141,10 @@ paths:
               schema:
                 type: object
                 properties:
-                  #todo
+                  link:
+                    type: string
+                    description: link for download each available file in AWS S3 bucket
+              example: http(s)://s3.amazonaws.com/<bucket>/<object>
         400:
           $ref: '#/components/responses/BadRequest'
         401:
