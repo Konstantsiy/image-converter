@@ -62,5 +62,5 @@ select id from converter.users
 where id not in (
     select u.id from converter.users u
     join converter.requests r
-    on u.id = r.user_id and r.target_format = 'jpeg'
+    on u.id = r.user_id and r.ratio is not null
 );
