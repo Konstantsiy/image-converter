@@ -1,5 +1,5 @@
 select 'create database ita'
-where not exists(select from pg_database where datname = 'ita');
+    where not exists(select from pg_database where datname = 'ita');
 \gexec
 
 \c ita
@@ -33,28 +33,24 @@ $$;
 create table if not exists converter.users (
     id uuid default uuid_generate_v1() primary key,
     email varchar(50) unique not null,
-    password varchar(50) not null,
-    created timestamp without time zone default current_timestamp not null,
-    updated timestamp without time zone default current_timestamp not null
+    password varchar(50) not null
 );
 
 create table if not exists converter.images (
     id uuid default uuid_generate_v1() primary key,
     name varchar(80) not null,
     format file_format not null,
-    location text not null,
-    created timestamp without time zone default current_timestamp not null,
-    updated timestamp without time zone default current_timestamp not null
+    location text not null
 );
 
 create table if not exists converter.requests (
     id uuid default uuid_generate_v1() primary key,
     user_id uuid not null,
     source_id uuid not null,
-    target_id uuid,
+    target_id uuid not null,
     source_format file_format not null,
     target_format file_format not null,
-    ratio int check ( ratio > 0  and ratio < 10),
+    ratio int check ( ratio > 0  and ratio < 100) not null,
     status status not null,
     created timestamp without time zone default current_timestamp not null,
     updated timestamp without time zone default current_timestamp not null,
