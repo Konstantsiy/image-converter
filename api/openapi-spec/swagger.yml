@@ -1,10 +1,10 @@
-openapi: 3.1.0
+openapi: 3.0.0
 info:
   title: Image Converter API
   description: Service that expose a RESTful API to convert JPEG to PNG and vice versa and compress the image
     with the compression ratio specified by the user. The user has the ability to view the history and status of
     their requests (for example, queued, processed, completed) and upload the original image and the processed one.
-  version: 1.0.0
+  version: 3.2.1
 servers:
   - url: http://localhost:8080/
     description: API Development Server
@@ -46,9 +46,8 @@ paths:
                     type: string
                     format: JWT
               example:
-                JWT-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.
-                eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.
-                SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+                JWT-token: |
+                  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
         400:
           $ref: '#/components/responses/BadRequest'
         401:
@@ -58,8 +57,8 @@ paths:
   /user/signup:
     post:
       summary: User registration
-        requestBody:
-          $ref: '#/components/requestBodies/UserRequest'
+      requestBody:
+        $ref: '#/components/requestBodies/UserRequest'
       responses:
         201:
           description: The user has successfully registered
@@ -81,7 +80,7 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /user/logout:
     get:
-      summagy: Log out of the user
+      summary: Log out of the user
       responses:
         200:
           description: OK
@@ -110,7 +109,7 @@ paths:
                     type: string
                     format: uuid
               example:
-                id: 7186afcc-cae7-11eb-80ff-0bc45a674b3c
+                id: '7186afcc-cae7-11eb-80ff-0bc45a674b3c'
         400:
           $ref: '#/components/responses/BadRequest'
         401:
@@ -132,7 +131,7 @@ paths:
             type: string
             format: uuid
           example:
-            id: 7186afcc-cae7-11eb-80ff-0bc45a674b3c
+            id: '7186afcc-cae7-11eb-80ff-0bc45a674b3c'
       responses:
         200:
           description: The image is ready to download
@@ -155,7 +154,6 @@ paths:
         500:
           $ref: '#/components/responses/InternalServerError'
 components:
-  # Reusable schemas (data models)
   schemas:
     RequestsHistoryResponse:
       type: object
@@ -174,20 +172,24 @@ components:
           type: string
           enum: [jpeg, png]
           description: Format to convert the image to
-          created:
-            type: string
-            format: timestamp
-          updated:
-            type: string
-            format: timestamp
-          status:
-            type: string
-            enum: [queued, processed, failed, done]
+        ratio:
+          type: string
+          format: integer
+        created:
+          type: string
+          format: timestamp
+        updated:
+          type: string
+          format: timestamp
+        status:
+          type: string
+          enum: [queued, processed, failed, done]
       example:
         id: 7186afcc-cae7-11eb-80ff-0bc45a674b3c
         name: Screenshot from 2021-06-12 10-44-06.png
         source_format: png
         target_format: jpeg
+        ratio: 3
         created: 2020-06-11 T 15:17:03 Z
         updated: 2020-06-11 T 15:21:17 Z
         status: done
@@ -200,16 +202,16 @@ components:
         message:
           type: string
       example:
-        statusCode: 400
+        statusCode: "400"
         message: The request could not be understood by the server due to malformed syntax
   # Security scheme definitions
-  securirySchemes:
-    barierAuth:
+  securitySchemes:
+    bearerAuth:
       type: http
       scheme: bearer
       description: Enter JWT Bearer token only
       bearerFormat: JWT
-  # Reusable request bodies
+  #Reusable request bodies
   requestBodies:
     UserRequest:
       description: A JSON object represened as user to add to the system
@@ -249,13 +251,13 @@ components:
                 type: string
                 format: integer
                 minimum: 1
-                maximum: 100
+                maximum: 9
                 description: Image compression ratio
           example:
             file: sequence of bytes
             source_format: png
             target_format: jpeg
-            ratio: 50
+            ratio: "4"
   # Reusable responses, such as 401 Unauthorized or 400 Bad Request
   responses:
     BadRequest:
@@ -272,6 +274,12 @@ components:
             $ref: '#/components/schemas/Error'
     NotFound:
       description: The server has not found anything matching the request URI
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UserAlreadyExists:
+      description: The request could not be completed due to a conflict with the current state of the target resource
       content:
         application/json:
           schema:
