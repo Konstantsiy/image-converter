@@ -1,11 +1,12 @@
 version: '3'
 services:
   database:
-    build: .
+    image: postgres:13-alpine
     restart: always
     env_file:
       - database.env
     volumes:
+      - ./scripts:/docker-entrypoint-initdb.d
       - ./data:/var/lib/postgresql/data/
     ports:
     - 5433:5432
