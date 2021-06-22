@@ -244,7 +244,7 @@ components:
       description: A JSON object consisting of image file, format to convert, and compression ratio
       required: true
       content:
-        application/json:
+        multipart/form-data:
           schema:
             type: object
             properties:
