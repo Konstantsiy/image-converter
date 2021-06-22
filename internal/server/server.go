@@ -89,8 +89,11 @@ func (s *Server) SignUp(w http.ResponseWriter, r *http.Request) {
 func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 	// auth middleware
 	// validation middleware (for file, formats and ration)
+	// upload image
+	// convert image
 	// work with storage
-	// convert image and return return id
+	// create a request
+	// return request id
 }
 
 // DownloadImage allows you to download original/converted image by id.
