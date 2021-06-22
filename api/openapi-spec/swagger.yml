@@ -258,8 +258,7 @@ components:
                 type: string
                 enum: [jpeg, png]
               ratio:
-                type: string
-                format: integer
+                type: integer
                 minimum: 1
                 maximum: 9
                 description: Image compression ratio
