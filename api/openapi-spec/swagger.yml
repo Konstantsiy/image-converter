@@ -12,6 +12,8 @@ paths:
   /requests:
     get:
       summary: Get user request history
+      tags:
+        - requests
       security:
         - bearerAuth: []
       responses:
@@ -23,8 +25,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/RequestsHistoryResponse'
-        400:
-          $ref: '#/components/responses/BadRequest'
         401:
           $ref: '#/components/responses/Unauthorized'
         500:
@@ -32,6 +32,8 @@ paths:
   /user/login:
     post:
       summary: User authorization
+      tags:
+        - users
       requestBody:
         $ref: '#/components/requestBodies/UserRequest'
       responses:
@@ -47,11 +49,7 @@ paths:
                     format: JWT
               example:
                 JWT-token: |
-                  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.
-                  eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.
-                  SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
-        400:
-          $ref: '#/components/responses/BadRequest'
+                  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
         401:
           $ref: '#/components/responses/Unauthorized'
         500:
@@ -59,6 +57,8 @@ paths:
   /user/signup:
     post:
       summary: User registration
+      tags:
+        - users
       requestBody:
         $ref: '#/components/requestBodies/UserRequest'
       responses:
@@ -83,11 +83,11 @@ paths:
   /user/logout:
     get:
       summary: Log out of the user
+      tags:
+        - users
       responses:
         200:
           description: OK
-        400:
-          $ref: '#/components/responses/BadRequest'
         401:
           $ref: '#/components/responses/Unauthorized'
         500:
@@ -95,6 +95,8 @@ paths:
   /conversion:
     post:
       summary: Create a request to convert an image
+      tags:
+        - images
       security:
         - bearerAuth: []
       requestBody:
@@ -121,6 +123,8 @@ paths:
   /images/{id}:
     get:
       summary: Download needed image by id
+      tags:
+        - images
       security:
         - bearerAuth: []
       parameters:
@@ -128,7 +132,6 @@ paths:
           in: path
           description: Needed image id
           required: true
-          style: simple
           schema:
             type: string
             format: uuid
@@ -166,6 +169,12 @@ components:
         name:
           type: string
           description: Image name
+        source_id:
+          type: string
+          format: uuid
+        target_id:
+          type: string
+          format: uuid
         source_format:
           type: string
           enum: [jpeg, png]
@@ -189,9 +198,11 @@ components:
       example:
         id: 7186afcc-cae7-11eb-80ff-0bc45a674b3c
         name: Screenshot from 2021-06-12 10-44-06.png
+        source_id: 1234fcc-cae7-11eb-80ff-0bc45a674b3d
+        target_id: 7843afcc-cae7-11eb-80ff-0bc45a6743s
         source_format: png
         target_format: jpeg
-        ratio: 3
+        ratio: "3"
         created: 2020-06-11 T 15:17:03 Z
         updated: 2020-06-11 T 15:21:17 Z
         status: done
@@ -203,9 +214,6 @@ components:
           format: integer
         message:
           type: string
-      example:
-        statusCode: "400"
-        message: The request could not be understood by the server due to malformed syntax
   # Security scheme definitions
   securitySchemes:
     bearerAuth:
@@ -268,27 +276,42 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+          example:
+            statusCode: "400"
+            message: The request could not be understood by the server due to malformed syntax
     Unauthorized:
       description: The request requires user authentication
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+          example:
+            statusCode: "401"
+            message: The request requires user authentication
     NotFound:
       description: The server has not found anything matching the request URI
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+          example:
+            statusCode: "404"
+            message: The server has not found anything matching the request URI
     UserAlreadyExists:
-      description: The request could not be completed due to a conflict with the current state of the target resource
+      description: A similar user is already registered in the system
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+          example:
+            statusCode: "409"
+            message: A similar user is already registered in the system
     InternalServerError:
       description: The server encountered an unexpected condition which prevented it from fulfilling the request
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+          example:
+            statusCode: "500"
+            message: The server encountered an unexpected condition which prevented it from fulfilling the request
