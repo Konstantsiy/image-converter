@@ -184,8 +184,7 @@ components:
           enum: [jpeg, png]
           description: Format to convert the image to
         ratio:
-          type: string
-          format: integer
+          type: integer
         created:
           type: string
           format: timestamp
@@ -202,7 +201,7 @@ components:
         target_id: 7843afcc-cae7-11eb-80ff-0bc45a6743s
         source_format: png
         target_format: jpeg
-        ratio: "3"
+        ratio: 3
         created: 2020-06-11 T 15:17:03 Z
         updated: 2020-06-11 T 15:21:17 Z
         status: done
@@ -266,7 +265,7 @@ components:
             file: sequence of bytes
             source_format: png
             target_format: jpeg
-            ratio: "4"
+            ratio: 4
   # Reusable responses, such as 401 Unauthorized or 400 Bad Request
   responses:
     BadRequest:
