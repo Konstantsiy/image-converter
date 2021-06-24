@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/Konstantsiy/image-converter/internal/model"
 	"github.com/Konstantsiy/image-converter/internal/service"
@@ -27,19 +29,29 @@ func NewServer() *Server {
 	}
 }
 
+// AuthMiddleware checks user authorization.
+func (s *Server) AuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// check JWT tokens
+		next.ServeHTTP(w, r)
+	})
+}
+
 // RegisterRoutes registers application routers.
 func (s *Server) RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/user/login", s.LogIn).Methods("POST")
 	r.HandleFunc("/user/signup", s.SignUp).Methods("POST")
-	r.HandleFunc("/conversion", s.ConvertImage).Methods("POST")
-	r.HandleFunc("/images/{id}", s.DownloadImage).Methods("GET")
-	r.HandleFunc("/requests", s.GetRequestsHistory).Methods("GET")
+
+	api := r.NewRoute().Subrouter()
+	api.Use(s.AuthMiddleware)
+
+	api.HandleFunc("/conversion", s.ConvertImage).Methods("POST")
+	api.HandleFunc("/images/{id}", s.DownloadImage).Methods("GET")
+	api.HandleFunc("/requests", s.GetRequestsHistory).Methods("GET")
 }
 
 // LogIn implements the user authentication process.
 func (s *Server) LogIn(w http.ResponseWriter, r *http.Request) {
-	// validation middleware (for email and password)
-
 	var request model.AuthRequest
 	var err error
 
@@ -60,13 +72,16 @@ func (s *Server) LogIn(w http.ResponseWriter, r *http.Request) {
 
 // SignUp implements the user registration process.
 func (s *Server) SignUp(w http.ResponseWriter, r *http.Request) {
-	// validation middleware (for email and password)
-
 	var request model.AuthRequest
 	var err error
 
 	if err = json.NewDecoder(r.Body).Decode(&request); err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	if err = ValidateUserCredentials(request.Email, request.Password); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -87,19 +102,32 @@ func (s *Server) SignUp(w http.ResponseWriter, r *http.Request) {
 
 // ConvertImage converts needed image according to the request.
 func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
-	// auth middleware
-	// validation middleware (for file, formats and ration)
-	// upload image
-	// convert image
-	// work with storage
-	// create a request
-	// return request id
+	file, header, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "can't get file from form", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	sourceFormat := r.FormValue("sourceFormat")
+	targetFormat := r.FormValue("targetFormat")
+	filename := strings.TrimSuffix(header.Filename, "."+sourceFormat)
+	ratio, err := strconv.Atoi(r.FormValue("ratio"))
+	if err != nil {
+		http.Error(w, "invalid ratio form value", http.StatusBadRequest)
+		return
+	}
+
+	if err = ValidateConversionRequest(filename, sourceFormat, targetFormat, ratio); err != nil {
+		http.Error(w, fmt.Sprint(err.Error()), http.StatusBadRequest)
+		return
+	}
+
+	// ...
 }
 
 // DownloadImage allows you to download original/converted image by id.
 func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
-	// auth middleware
-
 	vars := mux.Vars(r)
 	imageID := vars["id"]
 
@@ -120,7 +148,6 @@ func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
 
 // GetRequestsHistory displays the user's request history.
 func (s *Server) GetRequestsHistory(w http.ResponseWriter, r *http.Request) {
-	// auth middleware
 	// get userID from application context?
 
 	userID := "7186afcc-cae7-11eb-80ff-0bc45a674b3c"
