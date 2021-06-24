@@ -9,12 +9,16 @@ import (
 const (
 	// emailRegex checks the validity of the format of the entire email address.
 	emailRegex = "^[A-Za-z0-9._]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
+
 	// passwordOneLowercaseRegex searches for at least one lowercase character in password.
 	passwordOneLowercaseRegex = "(.*[a-z])"
+
 	// passwordOneUppercaseRegex searches for at least one uppercase character in password.
 	passwordOneUppercaseRegex = "(.*[A-Z])"
+
 	// passwordOneDigitRegex searches for at least one digit in password.
 	passwordOneDigitRegex = "(.*[0-9])"
+
 	// filenameInvalidCharactersRegex searches for special characters in password.
 	filenameInvalidCharactersRegex = "[:#%^;<>\\{}[\\]+~`=?&,\" ]"
 )
