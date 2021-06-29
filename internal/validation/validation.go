@@ -1,4 +1,5 @@
-package server
+// Package validation implements functions that validate requests data.
+package validation
 
 import (
 	"errors"
@@ -24,37 +25,40 @@ const (
 )
 
 const (
-	minLength = 8
-	maxLength = 20
-
-	minRatio = 1
-	maxRatio = 9
+	minPasswordLength = 8
+	maxPasswordLength = 20
+	minEmailLength    = 8
+	minRatio          = 1
+	maxRatio          = 9
 )
 
-var formats = []string{"jpeg", "jpg", "png"}
+var formats = map[string]struct{}{
+	"jpeg": {},
+	"png":  {},
+}
 
 var (
-	errInvalidEmailLength = fmt.Errorf("invalid email length: email it must be at least %d characters", minLength)
-	errInvalidEmailFormat = errors.New("invalid email format: enter the correct format, for example Ivan.Ivanov@company.com")
+	errInvalidEmailLength = fmt.Errorf("invalid email: email minimum %d characters", minPasswordLength)
+	errInvalidEmailFormat = errors.New("invalid email address format")
 
-	errInvalidPasswordLength    = fmt.Errorf("invalid password length: password must be from %d to %d characters", minLength, maxLength)
-	errNoOneLowercaseInPassword = errors.New("password must contain at least one lowercase character")
-	errNoOneUppercaseInPassword = errors.New("the password must contain at least one uppercase character")
-	errNoOneDigitInPassword     = errors.New("the password must contain at least one digit")
+	errInvalidPasswordLength    = fmt.Errorf("invalid password: length must be from %d to %d characters", minPasswordLength, maxPasswordLength)
+	errNoOneLowercaseInPassword = errors.New("invalid password: must contain at least one lowercase character")
+	errNoOneUppercaseInPassword = errors.New("the password: must contain at least one uppercase character")
+	errNoOneDigitInPassword     = errors.New("the password: must contain at least one digit")
 
 	errMissingFilename       = errors.New("missing filename")
-	errInvalidFilenameFormat = errors.New("filename shouldn't contain space and any special characters like :;<>{}[]+=?&,\"")
+	errInvalidFilenameFormat = errors.New("invalid filename: shouldn't contain space and any special characters like :;<>{}[]+=?&,\"")
 
 	errInvalidSourceFormat = errors.New("invalid source format: needed jpeg, jpg or png")
 	errInvalidTargetFormat = errors.New("invalid source format: needed jpeg, jpg or png")
 	errEqualsFormats       = errors.New("source and target formats should differ")
 
-	errInvalidRatio = fmt.Errorf("invalid compressoin ratio value: needed a value from %d to %d inclusive", minRatio, maxRatio)
+	errInvalidRatio = fmt.Errorf("invalid ratio: needed a value from %d to %d inclusive", minRatio, maxRatio)
 )
 
 // ValidateUserCredentials validates user credentials.
 func ValidateUserCredentials(email, password string) error {
-	if len(email) < minLength {
+	if len(email) < minEmailLength {
 		return errInvalidEmailLength
 	}
 
@@ -62,7 +66,7 @@ func ValidateUserCredentials(email, password string) error {
 		return errInvalidEmailFormat
 	}
 
-	if l := len(password); l < minLength || l > maxLength {
+	if l := len(password); l < minPasswordLength || l > maxPasswordLength {
 		return errInvalidPasswordLength
 	}
 
@@ -91,17 +95,15 @@ func ValidateConversionRequest(filename, sourceFormat, targetFormat string, rati
 		return errInvalidFilenameFormat
 	}
 
-	if !isFormatExists(sourceFormat) {
+	if _, ok := formats[sourceFormat]; !ok {
 		return errInvalidSourceFormat
 	}
 
-	if !isFormatExists(targetFormat) {
+	if _, ok := formats[targetFormat]; !ok {
 		return errInvalidTargetFormat
 	}
 
-	if sourceFormat == targetFormat ||
-		(sourceFormat == "jpeg" && targetFormat == "jpg") ||
-		(sourceFormat == "jpg" && targetFormat == "jpeg") {
+	if sourceFormat == targetFormat {
 		return errEqualsFormats
 	}
 
@@ -110,14 +112,4 @@ func ValidateConversionRequest(filename, sourceFormat, targetFormat string, rati
 	}
 
 	return nil
-}
-
-// isFormatExists checks the existence of the needed format.
-func isFormatExists(format string) bool {
-	for _, item := range formats {
-		if item == format {
-			return true
-		}
-	}
-	return false
 }

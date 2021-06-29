@@ -1,4 +1,4 @@
-package server
+package validation
 
 import "testing"
 
@@ -12,7 +12,7 @@ func assertNoError(t *testing.T, err error) {
 func assertError(t *testing.T, givenError, expectedError error) {
 	t.Helper()
 	if givenError != expectedError {
-		t.Errorf("Eepected %v, but got another one: %v", expectedError, givenError)
+		t.Errorf("Expected %v, but got another one: %v", expectedError, givenError)
 	}
 }
 
