@@ -8,8 +8,9 @@ import (
 )
 
 var (
-	ErrNoSuchUser  = errors.New("the user with this email does not exist")
-	ErrNoSuchImage = errors.New("the image with this id does not exists")
+	ErrNoSuchUser        = errors.New("the user with this email does not exist")
+	ErrNoSuchImage       = errors.New("the image with this id does not exist")
+	ErrUserAlreadyExists = errors.New("the user with the given username already exists")
 )
 
 // Repository represents the layer between the business logic and the database.
