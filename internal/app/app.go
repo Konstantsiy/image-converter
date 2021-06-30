@@ -4,6 +4,8 @@ package app
 import (
 	"net/http"
 
+	"github.com/Konstantsiy/image-converter/internal/auth"
+	"github.com/Konstantsiy/image-converter/internal/repository"
 	"github.com/Konstantsiy/image-converter/internal/server"
 	"github.com/gorilla/mux"
 )
@@ -11,7 +13,9 @@ import (
 // Start starts the application server.
 func Start() error {
 	r := mux.NewRouter()
-	s := server.NewServer()
+	repo := repository.NewRepository()
+	tokenManager := auth.NewTokenManager("simple_private_key")
+	s := server.NewServer(repo, tokenManager)
 	s.RegisterRoutes(r)
 	return http.ListenAndServe(":8080", r)
 }
