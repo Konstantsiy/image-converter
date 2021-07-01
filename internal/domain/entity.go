@@ -5,6 +5,7 @@ import "time"
 
 // ImageInfo represents an image in the database.
 type ImageInfo struct {
+	ID       string
 	Name     string
 	Format   string
 	Location string
