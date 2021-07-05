@@ -19,9 +19,11 @@ import (
 const (
 	AuthorizationHeader  = "Authorization"
 	NeededSecurityScheme = "Bearer"
-
-	userIDKey = iota
 )
+
+type key int
+
+const userIDKey key = iota
 
 // Server represents application server.
 type Server struct {
