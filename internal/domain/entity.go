@@ -22,6 +22,7 @@ type UserInfo struct {
 type ConversionRequestInfo struct {
 	ID           string
 	Name         string
+	UserID       string
 	SourceID     string
 	TargetID     string
 	SourceFormat string
