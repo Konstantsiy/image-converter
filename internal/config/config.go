@@ -1,7 +1,9 @@
+// Package config works with application configurations.
 package config
 
 import "os"
 
+// Config represents the application configurations.
 type Config struct {
 	Username   string
 	Password   string
@@ -12,6 +14,7 @@ type Config struct {
 	PrivateKey string
 }
 
+// Load loads the necessary configurations from the .env file.
 func (c *Config) Load() {
 	c.Username = os.Getenv("DB_USERNAME")
 	c.Password = os.Getenv("DB_PASSWORD")
