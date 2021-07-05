@@ -8,10 +8,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Konstantsiy/image-converter/internal/hash"
+	"github.com/Konstantsiy/image-converter/internal/storage"
 
 	"github.com/Konstantsiy/image-converter/internal/auth"
 	"github.com/Konstantsiy/image-converter/internal/domain"
+	"github.com/Konstantsiy/image-converter/internal/hash"
 	"github.com/Konstantsiy/image-converter/internal/repository"
 	"github.com/Konstantsiy/image-converter/internal/validation"
 	"github.com/gorilla/mux"
@@ -21,13 +22,15 @@ import (
 type Server struct {
 	repo         *repository.Repository
 	tokenManager *auth.TokenManager
+	storage      *storage.Storage
 }
 
 // NewServer creates new application server.
-func NewServer(repo *repository.Repository, tokenManager *auth.TokenManager) *Server {
+func NewServer(repo *repository.Repository, tokenManager *auth.TokenManager, storage *storage.Storage) *Server {
 	return &Server{
 		repo:         repo,
 		tokenManager: tokenManager,
+		storage:      storage,
 	}
 }
 

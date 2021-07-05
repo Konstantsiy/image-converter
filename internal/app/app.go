@@ -4,6 +4,8 @@ package app
 import (
 	"net/http"
 
+	"github.com/Konstantsiy/image-converter/internal/storage"
+
 	"github.com/Konstantsiy/image-converter/internal/config"
 
 	"github.com/Konstantsiy/image-converter/internal/auth"
@@ -22,7 +24,17 @@ func Start() error {
 	repo := repository.NewRepository()
 	tokenManager := auth.NewTokenManager(conf.PrivateKey)
 
-	s := server.NewServer(repo, tokenManager)
+	st := storage.NewStorage(storage.S3Config{
+		Region:          conf.Region,
+		AccessKeyID:     conf.AccessKeyID,
+		SecretAccessKey: conf.SecretAccessKey,
+	}, conf.BucketName)
+	err := st.InitS3ServiceClient()
+	if err != nil {
+		return err
+	}
+
+	s := server.NewServer(repo, tokenManager, st)
 	s.RegisterRoutes(r)
 	return http.ListenAndServe(":8080", r)
 }
