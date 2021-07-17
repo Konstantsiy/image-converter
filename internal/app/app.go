@@ -14,7 +14,7 @@ import (
 func Start() error {
 	r := mux.NewRouter()
 	repo := repository.NewRepository()
-	tokenManager := auth.NewTokenManager("simple_private_key")
+	tokenManager := auth.NewTokenManager("NHbNaO6LFERWnOUbU7l3MJdmCailwSzjO76O")
 	s := server.NewServer(repo, tokenManager)
 	s.RegisterRoutes(r)
 	return http.ListenAndServe(":8080", r)

@@ -9,5 +9,8 @@ import (
 
 // Main function.
 func main() {
-	log.Fatal("failed to start app: ", app.Start())
+	err := app.Start()
+	if err != nil {
+		log.Fatal("failed to start app: ", err)
+	}
 }

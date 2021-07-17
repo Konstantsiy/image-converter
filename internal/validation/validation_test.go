@@ -1,6 +1,9 @@
 package validation
 
-import "testing"
+import (
+	"errors"
+	"testing"
+)
 
 func assertNoError(t *testing.T, err error) {
 	t.Helper()
@@ -11,12 +14,12 @@ func assertNoError(t *testing.T, err error) {
 
 func assertError(t *testing.T, givenError, expectedError error) {
 	t.Helper()
-	if givenError != expectedError {
-		t.Errorf("Expected %v, but got another one: %v", expectedError, givenError)
+	if !errors.Is(givenError, expectedError) {
+		t.Errorf("Expected %v, but got %v", expectedError, givenError)
 	}
 }
 
-// TestValidateUserCredentials tests ValidateUserCredentials function.
+// TestValidateUserCredentials tests ValidateSignUpRequest function.
 func TestValidateUserCredentials(t *testing.T) {
 	testTable := []struct {
 		Email           string
@@ -69,7 +72,7 @@ func TestValidateUserCredentials(t *testing.T) {
 	}
 
 	for _, tc := range testTable {
-		err := ValidateUserCredentials(tc.Email, tc.Password)
+		err := ValidateSignUpRequest(tc.Email, tc.Password)
 		if tc.IsErrorExpected {
 			assertError(t, err, tc.ExpectedError)
 		} else {
@@ -123,7 +126,7 @@ func TestValidateConversionRequest(t *testing.T) {
 		{
 			Filename:        "filename",
 			SourceFormat:    "jpg",
-			TargetFormat:    "jpeg",
+			TargetFormat:    "jpg",
 			Ratio:           3,
 			IsErrorExpected: true,
 			ExpectedError:   errEqualsFormats,
