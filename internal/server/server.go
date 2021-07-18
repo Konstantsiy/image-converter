@@ -176,7 +176,7 @@ func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	imageID := vars["id"]
 
-	imageLocation, err := s.repo.GetImageLocationByID(imageID)
+	image, err := s.repo.GetImageByID(imageID)
 	if err == repository.ErrNoSuchImage {
 		http.Error(w, "can't get image info: "+err.Error(), http.StatusNotFound)
 		return
@@ -188,7 +188,7 @@ func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
 
 	// get image downloaded URL from storage by image.Location
 
-	url := "http(s)://s3.amazonaws.com/" + imageLocation + "/file_name.extension"
+	url := "http(s)://s3.amazonaws.com/" + image.Location + "/file_name.extension"
 
 	fmt.Fprint(w, &DownloadResponse{ImageURL: url})
 }

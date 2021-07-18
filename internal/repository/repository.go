@@ -54,14 +54,14 @@ func (r *Repository) InsertUser(email, password string) (string, error) {
 	return "", nil
 }
 
-// GetImageLocationByID gets the information about the user by given email.
+// GetImageByID gets the information about the user by given email.
 func (r *Repository) GetUserByEmail(email string) (User, error) {
 	return User{}, nil
 }
 
-// GetImageLocationByID gets the information about the image by given id.
-func (r *Repository) GetImageLocationByID(imageId string) (string, error) {
-	return "", nil
+// GetImageByID gets the information about the image by given id.
+func (r *Repository) GetImageByID(imageId string) (Image, error) {
+	return Image{}, nil
 }
 
 // GetRequestsByUserID gets the information about requests by given user id.

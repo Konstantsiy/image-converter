@@ -56,16 +56,6 @@ var (
 	errInvalidRatio = fmt.Errorf("invalid ratio: needed a value from %d to %d inclusive", minRatio, maxRatio)
 )
 
-//ValidateError represents validation error.
-type ValidateError struct {
-	Field   string
-	Message string
-}
-
-func (e *ValidateError) Error() string {
-	return fmt.Sprintf("invalid %s: %s", e.Field, e.Message)
-}
-
 // ValidateSignUpRequest validates user credentials.
 func ValidateSignUpRequest(email, password string) error {
 	if len(email) < minEmailLength {
