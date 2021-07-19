@@ -1,0 +1,208 @@
+// Package server implements http handlers.
+package server
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
+
+	"github.com/Konstantsiy/image-converter/internal/auth"
+	"github.com/Konstantsiy/image-converter/internal/repository"
+	"github.com/Konstantsiy/image-converter/internal/validation"
+	"github.com/gorilla/mux"
+)
+
+// AuthRequest represents the user's authorization request.
+type AuthRequest struct {
+	Email    string
+	Password string
+}
+
+// ConversionRequest represents an image conversion request.
+type ConversionRequest struct {
+	File         string
+	SourceFormat string
+	TargetFormat string
+	Ratio        int
+}
+
+// LoginResponse represents token for authorization response.
+type LoginResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
+//SignUpResponse represents user id from sign up response.
+type SignUpResponse struct {
+	UserID string `json:"user_id"`
+}
+
+//DownloadResponse represents downloaded image URL.
+type DownloadResponse struct {
+	ImageURL string `json:"image_url"`
+}
+
+// Server represents application server.
+type Server struct {
+	repo         *repository.Repository
+	tokenManager *auth.TokenManager
+}
+
+// NewServer creates new application server.
+func NewServer(repo *repository.Repository, tokenManager *auth.TokenManager) *Server {
+	return &Server{
+		repo:         repo,
+		tokenManager: tokenManager,
+	}
+}
+
+// AuthMiddleware checks user authorization.
+func (s *Server) AuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// check JWT tokens
+		next.ServeHTTP(w, r)
+	})
+}
+
+// RegisterRoutes registers application routers.
+func (s *Server) RegisterRoutes(r *mux.Router) {
+	r.HandleFunc("/user/login", s.LogIn).Methods("POST")
+	r.HandleFunc("/user/signup", s.SignUp).Methods("POST")
+
+	api := r.NewRoute().Subrouter()
+	api.Use(s.AuthMiddleware)
+
+	api.HandleFunc("/conversion", s.ConvertImage).Methods("POST")
+	api.HandleFunc("/images/{id}", s.DownloadImage).Methods("GET")
+	api.HandleFunc("/requests", s.GetRequestsHistory).Methods("GET")
+}
+
+// LogIn implements the user authentication process.
+func (s *Server) LogIn(w http.ResponseWriter, r *http.Request) {
+	var request AuthRequest
+
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+	defer r.Body.Close()
+
+	user, err := s.repo.GetUserByEmail(request.Email)
+	if err == repository.ErrNoSuchUser {
+		http.Error(w, "invalid email or password", http.StatusUnauthorized)
+		return
+	}
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// hash.ComparePasswords(request.Password, user.Password) -> next PR with hashing
+
+	accessToken, err := s.tokenManager.GenerateAccessToken(user.ID)
+	if err != nil {
+		http.Error(w, "can't generate access token: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	refreshToken, err := s.tokenManager.GenerateRefreshToken()
+	if err != nil {
+		http.Error(w, "can't generate refresh token: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprint(w, &LoginResponse{AccessToken: accessToken, RefreshToken: refreshToken})
+}
+
+// SignUp implements the user registration process.
+func (s *Server) SignUp(w http.ResponseWriter, r *http.Request) {
+	var request AuthRequest
+
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+	defer r.Body.Close()
+
+	if err = validation.ValidateSignUpRequest(request.Email, request.Password); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	userID, err := s.repo.InsertUser(request.Email, request.Password)
+	if err == repository.ErrUserAlreadyExists {
+		http.Error(w, "can't create user: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprint(w, &SignUpResponse{UserID: userID})
+}
+
+// ConvertImage converts needed image according to the request.
+func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
+	file, header, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "can't get file from form", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	sourceFormat := r.FormValue("sourceFormat")
+	targetFormat := r.FormValue("targetFormat")
+	filename := strings.TrimSuffix(header.Filename, "."+sourceFormat)
+	ratio, err := strconv.Atoi(r.FormValue("ratio"))
+	if err != nil {
+		http.Error(w, "invalid ratio form value", http.StatusBadRequest)
+		return
+	}
+
+	if err = validation.ValidateConversionRequest(filename, sourceFormat, targetFormat, ratio); err != nil {
+		http.Error(w, fmt.Sprint(err.Error()), http.StatusBadRequest)
+		return
+	}
+
+	// ... next PRs
+}
+
+// DownloadImage allows you to download original/converted image by id.
+func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	imageID := vars["id"]
+
+	image, err := s.repo.GetImageByID(imageID)
+	if err == repository.ErrNoSuchImage {
+		http.Error(w, "can't get image info: "+err.Error(), http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// get image downloaded URL from storage by image.Location
+
+	url := "http(s)://s3.amazonaws.com/" + image.Location + "/file_name.extension"
+
+	fmt.Fprint(w, &DownloadResponse{ImageURL: url})
+}
+
+// GetRequestsHistory displays the user's request history.
+func (s *Server) GetRequestsHistory(w http.ResponseWriter, r *http.Request) {
+	// get userID from application context?
+
+	userID := "7186afcc-cae7-11eb-80ff-0bc45a674b3c"
+	requestsHistory, err := s.repo.GetRequestsByUserID(userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprint(w, fmt.Sprint(requestsHistory))
+}
