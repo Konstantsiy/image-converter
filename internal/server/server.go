@@ -145,7 +145,7 @@ func (s *Server) SignUp(w http.ResponseWriter, r *http.Request) {
 
 	userID, err := s.repo.InsertUser(request.Email, hashPwd)
 	if err == repository.ErrUserAlreadyExists {
-    http.Error(w, err.Error(), http.StatusBadRequest)
+    		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	if err != nil {
