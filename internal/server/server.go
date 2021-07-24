@@ -8,9 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Konstantsiy/image-converter/internal/hash"
 	"github.com/Konstantsiy/image-converter/internal/auth"
-	"github.com/Konstantsiy/image-converter/internal/domain"
+	"github.com/Konstantsiy/image-converter/internal/hash"
 	"github.com/Konstantsiy/image-converter/internal/repository"
 	"github.com/Konstantsiy/image-converter/internal/validation"
 	"github.com/gorilla/mux"
@@ -106,7 +105,7 @@ func (s *Server) LogIn(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid email or password: "+err.Error(), http.StatusUnauthorized)
 		return
 	}
-  
+
 	accessToken, err := s.tokenManager.GenerateAccessToken(user.ID)
 	if err != nil {
 		http.Error(w, "can't generate access token: "+err.Error(), http.StatusInternalServerError)
@@ -145,7 +144,7 @@ func (s *Server) SignUp(w http.ResponseWriter, r *http.Request) {
 
 	userID, err := s.repo.InsertUser(request.Email, hashPwd)
 	if err == repository.ErrUserAlreadyExists {
-    		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	if err != nil {

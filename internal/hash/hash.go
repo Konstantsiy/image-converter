@@ -14,9 +14,5 @@ func GeneratePasswordHash(pwd string) (string, error) {
 //ComparePasswords compares a hashed password with a regular one.
 func ComparePasswords(hashedPwd, pwd string) (bool, error) {
 	err := bcrypt.CompareHashAndPassword([]byte(hashedPwd), []byte(pwd))
-	if err != nil {
-		return false, err
-	}
-
-	return true, nil
+	return err != nil, err
 }

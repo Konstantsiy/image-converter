@@ -3,12 +3,12 @@ package auth
 
 // TokenManager implements functionality for Access & Refresh tokens generation.
 type TokenManager struct {
-	privateKey string
+	publicKey string
 }
 
-func NewTokenManager(privateKey string) *TokenManager {
+func NewTokenManager(publicKey string) *TokenManager {
 	return &TokenManager{
-		privateKey: privateKey,
+		publicKey: publicKey,
 	}
 }
 
