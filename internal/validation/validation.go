@@ -33,31 +33,31 @@ const (
 )
 
 var formats = map[string]struct{}{
-	"jpeg": {},
-	"png":  {},
+	"jpg": {},
+	"png": {},
 }
 
 var (
-	errInvalidEmailLength = fmt.Errorf("invalid email: email minimum %d characters", minPasswordLength)
+	errInvalidEmailLength = fmt.Errorf("email has minimum %d characters", minPasswordLength)
 	errInvalidEmailFormat = errors.New("invalid email address format")
 
-	errInvalidPasswordLength    = fmt.Errorf("invalid password: length must be from %d to %d characters", minPasswordLength, maxPasswordLength)
-	errNoOneLowercaseInPassword = errors.New("invalid password: must contain at least one lowercase character")
-	errNoOneUppercaseInPassword = errors.New("the password: must contain at least one uppercase character")
-	errNoOneDigitInPassword     = errors.New("the password: must contain at least one digit")
+	errInvalidPasswordLength    = fmt.Errorf("password length must be from %d to %d characters", minPasswordLength, maxPasswordLength)
+	errNoOneLowercaseInPassword = errors.New("password must contain at least one lowercase character")
+	errNoOneUppercaseInPassword = errors.New("password must contain at least one uppercase character")
+	errNoOneDigitInPassword     = errors.New("password must contain at least one digit")
 
 	errMissingFilename       = errors.New("missing filename")
-	errInvalidFilenameFormat = errors.New("invalid filename: shouldn't contain space and any special characters like :;<>{}[]+=?&,\"")
+	errInvalidFilenameFormat = errors.New("filename shouldn't contain space and any special characters like :;<>{}[]+=?&,\"")
 
-	errInvalidSourceFormat = errors.New("invalid source format: needed jpeg, jpg or png")
-	errInvalidTargetFormat = errors.New("invalid source format: needed jpeg, jpg or png")
+	errInvalidSourceFormat = errors.New("invalid source format: needed jpg or png")
+	errInvalidTargetFormat = errors.New("invalid target format: needed jpg or png")
 	errEqualsFormats       = errors.New("source and target formats should differ")
 
 	errInvalidRatio = fmt.Errorf("invalid ratio: needed a value from %d to %d inclusive", minRatio, maxRatio)
 )
 
-// ValidateUserCredentials validates user credentials.
-func ValidateUserCredentials(email, password string) error {
+// ValidateSignUpRequest validates user credentials.
+func ValidateSignUpRequest(email, password string) error {
 	if len(email) < minEmailLength {
 		return errInvalidEmailLength
 	}
