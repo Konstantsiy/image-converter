@@ -18,7 +18,6 @@ func assertError(t *testing.T, givenParam, expectedParam string) {
 	}
 }
 
-// TestValidateSignUpRequest tests ValidateSignUpRequest function.
 func TestValidateSignUpRequest(t *testing.T) {
 	testTable := []struct {
 		Email                string
@@ -80,7 +79,6 @@ func TestValidateSignUpRequest(t *testing.T) {
 	}
 }
 
-// TestValidateConversionRequest tests ValidateConversionRequest function.
 func TestValidateConversionRequest(t *testing.T) {
 	testTable := []struct {
 		Filename             string
