@@ -21,7 +21,7 @@ func Start() error {
 	}
 
 	repo := repository.NewRepository()
-	tokenManager := auth.NewTokenManager(conf.PublicKey)
+	tokenManager := auth.NewTokenManager(conf.PublicKey, conf.PrivateKey)
 
 	s := server.NewServer(repo, tokenManager)
 	s.RegisterRoutes(r)
