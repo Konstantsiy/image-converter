@@ -2,7 +2,6 @@
 package validation
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 )
@@ -37,79 +36,105 @@ var formats = map[string]struct{}{
 	"png": {},
 }
 
-var (
-	errInvalidEmailLength = fmt.Errorf("email has minimum %d characters", minPasswordLength)
-	errInvalidEmailFormat = errors.New("invalid email address format")
+type InvalidParameterError struct {
+	Param   string
+	Message string
+}
 
-	errInvalidPasswordLength    = fmt.Errorf("password length must be from %d to %d characters", minPasswordLength, maxPasswordLength)
-	errNoOneLowercaseInPassword = errors.New("password must contain at least one lowercase character")
-	errNoOneUppercaseInPassword = errors.New("password must contain at least one uppercase character")
-	errNoOneDigitInPassword     = errors.New("password must contain at least one digit")
-
-	errMissingFilename       = errors.New("missing filename")
-	errInvalidFilenameFormat = errors.New("filename shouldn't contain space and any special characters like :;<>{}[]+=?&,\"")
-
-	errInvalidSourceFormat = errors.New("invalid source format: needed jpg or png")
-	errInvalidTargetFormat = errors.New("invalid target format: needed jpg or png")
-	errEqualsFormats       = errors.New("source and target formats should differ")
-
-	errInvalidRatio = fmt.Errorf("invalid ratio: needed a value from %d to %d inclusive", minRatio, maxRatio)
-)
+func (e InvalidParameterError) Error() string {
+	return fmt.Sprintf("invalid %s: %s", e.Param, e.Message)
+}
 
 // ValidateSignUpRequest validates user credentials.
-func ValidateSignUpRequest(email, password string) error {
+func ValidateSignUpRequest(email, password string) *InvalidParameterError {
 	if len(email) < minEmailLength {
-		return errInvalidEmailLength
+		return &InvalidParameterError{
+			Param:   "email",
+			Message: fmt.Sprintf("need minimum %d characters", minEmailLength),
+		}
 	}
 
 	if match, _ := regexp.MatchString(emailRegex, email); !match {
-		return errInvalidEmailFormat
+		return &InvalidParameterError{
+			Param:   "email",
+			Message: "doesn't match the correct address format (for example ivan.ivanov@gmail.com)",
+		}
 	}
 
 	if l := len(password); l < minPasswordLength || l > maxPasswordLength {
-		return errInvalidPasswordLength
+		return &InvalidParameterError{
+			Param:   "password",
+			Message: fmt.Sprintf("length must be from %d to %d characters", minPasswordLength, maxPasswordLength),
+		}
 	}
 
 	if match, _ := regexp.MatchString(passwordOneLowercaseRegex, password); !match {
-		return errNoOneLowercaseInPassword
+		return &InvalidParameterError{
+			Param:   "password",
+			Message: "need at least one lowercase character",
+		}
 	}
 
 	if match, _ := regexp.MatchString(passwordOneUppercaseRegex, password); !match {
-		return errNoOneUppercaseInPassword
+		return &InvalidParameterError{
+			Param:   "password",
+			Message: "need at least one uppercase character",
+		}
 	}
 
 	if match, _ := regexp.MatchString(passwordOneDigitRegex, password); !match {
-		return errNoOneDigitInPassword
+		return &InvalidParameterError{
+			Param:   "password",
+			Message: "need at least one digit",
+		}
 	}
 
-	return nil
+	return &InvalidParameterError{}
 }
 
 // ValidateConversionRequest validates data from the conversion request body.
-func ValidateConversionRequest(filename, sourceFormat, targetFormat string, ratio int) error {
+func ValidateConversionRequest(filename, sourceFormat, targetFormat string, ratio int) *InvalidParameterError {
 	if len(filename) == 0 {
-		return errMissingFilename
+		return &InvalidParameterError{
+			Param:   "filename",
+			Message: "shouldn't be empty",
+		}
 	}
 
 	if match, _ := regexp.MatchString(filenameInvalidCharactersRegex, filename); match {
-		return errInvalidFilenameFormat
+		return &InvalidParameterError{
+			Param:   "filename",
+			Message: "shouldn't contain space and any special characters like :;<>{}[]+=?&,\"",
+		}
 	}
 
 	if _, ok := formats[sourceFormat]; !ok {
-		return errInvalidSourceFormat
+		return &InvalidParameterError{
+			Param:   "source format",
+			Message: "needed jpg or png",
+		}
 	}
 
 	if _, ok := formats[targetFormat]; !ok {
-		return errInvalidTargetFormat
+		return &InvalidParameterError{
+			Param:   "target format",
+			Message: "needed jpg or png",
+		}
 	}
 
 	if sourceFormat == targetFormat {
-		return errEqualsFormats
+		return &InvalidParameterError{
+			Param:   "formats",
+			Message: "source and target formats should differ",
+		}
 	}
 
 	if ratio < minRatio || ratio > maxRatio {
-		return errInvalidRatio
+		return &InvalidParameterError{
+			Param:   "ratio",
+			Message: fmt.Sprintf("needed a value from %d to %d inclusive", minRatio, maxRatio),
+		}
 	}
 
-	return nil
+	return &InvalidParameterError{}
 }

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/Konstantsiy/image-converter/internal/auth"
+	"github.com/Konstantsiy/image-converter/internal/hash"
 	"github.com/Konstantsiy/image-converter/internal/repository"
 	"github.com/Konstantsiy/image-converter/internal/validation"
 	"github.com/gorilla/mux"
@@ -100,7 +101,10 @@ func (s *Server) LogIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// hash.ComparePasswords(request.Password, user.Password) -> next PR with hashing
+	if ok, err := hash.ComparePasswords(user.Password, request.Password); !ok || err != nil {
+		http.Error(w, "invalid email or password", http.StatusUnauthorized)
+		return
+	}
 
 	accessToken, err := s.tokenManager.GenerateAccessToken(user.ID)
 	if err != nil {
@@ -132,9 +136,15 @@ func (s *Server) SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, err := s.repo.InsertUser(request.Email, request.Password)
+	hashPwd, err := hash.GeneratePasswordHash(request.Password)
+	if err != nil {
+		http.Error(w, "can't generate password hash: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	userID, err := s.repo.InsertUser(request.Email, hashPwd)
 	if err == repository.ErrUserAlreadyExists {
-		http.Error(w, "can't create user: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	if err != nil {
@@ -187,7 +197,6 @@ func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get image downloaded URL from storage by image.Location
-
 	url := "http(s)://s3.amazonaws.com/" + image.Location + "/file_name.extension"
 
 	fmt.Fprint(w, &DownloadResponse{ImageURL: url})
@@ -195,8 +204,7 @@ func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
 
 // GetRequestsHistory displays the user's request history.
 func (s *Server) GetRequestsHistory(w http.ResponseWriter, r *http.Request) {
-	// get userID from application context?
-
+	// get userID from application context
 	userID := "7186afcc-cae7-11eb-80ff-0bc45a674b3c"
 	requestsHistory, err := s.repo.GetRequestsByUserID(userID)
 	if err != nil {
