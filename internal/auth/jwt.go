@@ -16,12 +16,13 @@ const (
 
 // TokenManager implements functionality for Access & Refresh tokens generation.
 type TokenManager struct {
+	publicKey  string
 	privateKey string
 }
 
-//NewTokenManager returns new token manager with the given private key.
-func NewTokenManager(privateKey string) *TokenManager {
+func NewTokenManager(publicKey, privateKey string) *TokenManager {
 	return &TokenManager{
+		publicKey:  publicKey,
 		privateKey: privateKey,
 	}
 }

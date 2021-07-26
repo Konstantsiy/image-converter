@@ -11,7 +11,7 @@ import (
 var (
 	ErrNoSuchUser        = errors.New("the user with this email does not exist")
 	ErrNoSuchImage       = errors.New("the image with this id does not exist")
-	ErrUserAlreadyExists = errors.New("the user with the given username already exists")
+	ErrUserAlreadyExists = errors.New("the user with the given email already exists")
 )
 
 // Image represents an image in the database.
@@ -51,7 +51,7 @@ func NewRepository() *Repository {
 	return &Repository{}
 }
 
-// InsertUser inserts the user into users table.
+// InsertUser inserts the user into users table and returns user id.
 func (r *Repository) InsertUser(email, password string) (string, error) {
 	return "", nil
 }
