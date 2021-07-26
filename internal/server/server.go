@@ -102,7 +102,7 @@ func (s *Server) LogIn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if ok, err := hash.ComparePasswords(user.Password, request.Password); !ok || err != nil {
-		http.Error(w, "invalid email or password: "+err.Error(), http.StatusUnauthorized)
+		http.Error(w, "invalid email or password", http.StatusUnauthorized)
 		return
 	}
 
