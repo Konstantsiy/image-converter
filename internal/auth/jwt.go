@@ -1,7 +1,6 @@
 // Package auth provides the logic for working with JWT tokens.
 package auth
 
-
 import (
 	"fmt"
 	"time"
@@ -10,8 +9,8 @@ import (
 )
 
 const (
-	ACTimeout = 12 * time.Hour
-	RTTimeout = 48 * time.Hour
+	AccessTokenTimeout  = 12 * time.Hour
+	RefreshTokenTimeout = 48 * time.Hour
 )
 
 // TokenManager implements functionality for Access & Refresh tokens generation.
@@ -31,7 +30,7 @@ func NewTokenManager(publicKey, privateKey string) *TokenManager {
 func (tm *TokenManager) GenerateAccessToken(userID string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
 		Subject:   userID,
-		ExpiresAt: time.Now().Add(ACTimeout).Unix(),
+		ExpiresAt: time.Now().Add(AccessTokenTimeout).Unix(),
 		IssuedAt:  time.Now().Unix(),
 	})
 
@@ -41,30 +40,30 @@ func (tm *TokenManager) GenerateAccessToken(userID string) (string, error) {
 // GenerateRefreshToken generates new refresh token.
 func (tm *TokenManager) GenerateRefreshToken() (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
-		ExpiresAt: time.Now().Add(RTTimeout).Unix(),
+		ExpiresAt: time.Now().Add(RefreshTokenTimeout).Unix(),
 		IssuedAt:  time.Now().Unix(),
 	})
 
 	return token.SignedString(tm.privateKey)
 }
 
-//ParseToken parses the given token and returns the user ID.
+//ParseToken parses the given token, checks it validity and returns the user ID.
 func (tm *TokenManager) ParseToken(accessToken string) (string, error) {
 	token, err := jwt.Parse(accessToken, func(token *jwt.Token) (i interface{}, err error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return []byte(tm.privateKey), nil
+		return jwt.ParseECPublicKeyFromPEM([]byte(tm.publicKey))
 	})
-	if err != nil {
-		return "", err
+	if err != nil || !token.Valid {
+		return "", fmt.Errorf("can't parse token: %w", err)
 	}
 
-	claims, ok := token.Claims.(jwt.MapClaims)
+	claims, ok := token.Claims.(jwt.StandardClaims)
 	if !ok {
-		return "", fmt.Errorf("error get user claims from token")
+		return "", fmt.Errorf("can't get user claims from token")
 	}
 
-	return claims["sub"].(string), nil
+	return claims.Subject, nil
 }

@@ -2,12 +2,13 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/Konstantsiy/image-converter/internal/appcontext"
 
 	"github.com/Konstantsiy/image-converter/internal/auth"
 	"github.com/Konstantsiy/image-converter/internal/hash"
@@ -20,10 +21,6 @@ const (
 	AuthorizationHeader  = "Authorization"
 	NeededSecurityScheme = "Bearer"
 )
-
-type key int
-
-const userIDKey key = iota
 
 // AuthRequest represents the user's authorization request.
 type AuthRequest struct {
@@ -96,7 +93,7 @@ func (s *Server) AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), userIDKey, claimsUserID)
+		ctx := appcontext.ContextWithUserID(r.Context(), claimsUserID)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -239,7 +236,7 @@ func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
 
 // GetRequestsHistory displays the user's request history.
 func (s *Server) GetRequestsHistory(w http.ResponseWriter, r *http.Request) {
-	// get userID from application context
+	// get userID from application appcontext
 	userID := "7186afcc-cae7-11eb-80ff-0bc45a674b3c"
 	requestsHistory, err := s.repo.GetRequestsByUserID(userID)
 	if err != nil {
