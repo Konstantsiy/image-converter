@@ -4,8 +4,6 @@ package repository
 import (
 	"errors"
 	"time"
-
-	"github.com/Konstantsiy/image-converter/internal/domain"
 )
 
 var (

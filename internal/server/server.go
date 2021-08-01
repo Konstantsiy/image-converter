@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/Konstantsiy/image-converter/internal/appcontext"
-
 	"github.com/Konstantsiy/image-converter/internal/auth"
 	"github.com/Konstantsiy/image-converter/internal/hash"
 	"github.com/Konstantsiy/image-converter/internal/repository"
@@ -236,8 +235,8 @@ func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
 
 // GetRequestsHistory displays the user's request history.
 func (s *Server) GetRequestsHistory(w http.ResponseWriter, r *http.Request) {
-	// get userID from application appcontext
-	userID := "7186afcc-cae7-11eb-80ff-0bc45a674b3c"
+	userID := appcontext.UserIDFromContext(r.Context())
+
 	requestsHistory, err := s.repo.GetRequestsByUserID(userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
