@@ -9,11 +9,41 @@ import (
 	"strings"
 
 	"github.com/Konstantsiy/image-converter/internal/auth"
-	"github.com/Konstantsiy/image-converter/internal/domain"
+	"github.com/Konstantsiy/image-converter/internal/hash"
 	"github.com/Konstantsiy/image-converter/internal/repository"
 	"github.com/Konstantsiy/image-converter/internal/validation"
 	"github.com/gorilla/mux"
 )
+
+// AuthRequest represents the user's authorization request.
+type AuthRequest struct {
+	Email    string
+	Password string
+}
+
+// ConversionRequest represents an image conversion request.
+type ConversionRequest struct {
+	File         string
+	SourceFormat string
+	TargetFormat string
+	Ratio        int
+}
+
+// LoginResponse represents token for authorization response.
+type LoginResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
+//SignUpResponse represents user id from sign up response.
+type SignUpResponse struct {
+	UserID string `json:"user_id"`
+}
+
+//DownloadResponse represents downloaded image URL.
+type DownloadResponse struct {
+	ImageURL string `json:"image_url"`
+}
 
 // Server represents application server.
 type Server struct {
@@ -52,7 +82,7 @@ func (s *Server) RegisterRoutes(r *mux.Router) {
 
 // LogIn implements the user authentication process.
 func (s *Server) LogIn(w http.ResponseWriter, r *http.Request) {
-	var request domain.AuthRequest
+	var request AuthRequest
 
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
@@ -61,10 +91,9 @@ func (s *Server) LogIn(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	var user domain.UserInfo
-	user, err = s.repo.GetUserByEmail(request.Email)
+	user, err := s.repo.GetUserByEmail(request.Email)
 	if err == repository.ErrNoSuchUser {
-		http.Error(w, "can't get user info: "+err.Error(), http.StatusUnauthorized)
+		http.Error(w, "invalid email or password", http.StatusUnauthorized)
 		return
 	}
 	if err != nil {
@@ -72,24 +101,28 @@ func (s *Server) LogIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var tokens domain.TokensResponse
-	tokens.AccessToken, err = s.tokenManager.GenerateAccessToken(user.ID)
-	if err != nil {
-		http.Error(w, "can't generate access token: "+err.Error(), http.StatusUnauthorized)
-		return
-	}
-	tokens.RefreshToken, err = s.tokenManager.GenerateRefreshToken()
-	if err != nil {
-		http.Error(w, "can't generate refresh token: "+err.Error(), http.StatusUnauthorized)
+	if ok, err := hash.ComparePasswords(user.Password, request.Password); !ok || err != nil {
+		http.Error(w, "invalid email or password", http.StatusUnauthorized)
 		return
 	}
 
-	fmt.Fprint(w, tokens.AccessToken, tokens.RefreshToken)
+	accessToken, err := s.tokenManager.GenerateAccessToken(user.ID)
+	if err != nil {
+		http.Error(w, "can't generate access token: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	refreshToken, err := s.tokenManager.GenerateRefreshToken()
+	if err != nil {
+		http.Error(w, "can't generate refresh token: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprint(w, &LoginResponse{AccessToken: accessToken, RefreshToken: refreshToken})
 }
 
 // SignUp implements the user registration process.
 func (s *Server) SignUp(w http.ResponseWriter, r *http.Request) {
-	var request domain.AuthRequest
+	var request AuthRequest
 
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
@@ -98,22 +131,28 @@ func (s *Server) SignUp(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	if err = validation.ValidateUserCredentials(request.Email, request.Password); err != nil {
+	if err = validation.ValidateSignUpRequest(request.Email, request.Password); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	userID, err := s.repo.InsertUser(request.Email, request.Password)
+	hashPwd, err := hash.GeneratePasswordHash(request.Password)
+	if err != nil {
+		http.Error(w, "can't generate password hash: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	userID, err := s.repo.InsertUser(request.Email, hashPwd)
 	if err == repository.ErrUserAlreadyExists {
-		http.Error(w, "can't create user: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	fmt.Fprint(w, userID)
+	fmt.Fprint(w, &SignUpResponse{UserID: userID})
 }
 
 // ConvertImage converts needed image according to the request.
@@ -139,7 +178,7 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ...
+	// ... next PRs
 }
 
 // DownloadImage allows you to download original/converted image by id.
@@ -149,7 +188,7 @@ func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
 
 	image, err := s.repo.GetImageByID(imageID)
 	if err == repository.ErrNoSuchImage {
-		http.Error(w, "can't get image info: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, "can't get image info: "+err.Error(), http.StatusNotFound)
 		return
 	}
 	if err != nil {
@@ -158,16 +197,14 @@ func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get image downloaded URL from storage by image.Location
-
 	url := "http(s)://s3.amazonaws.com/" + image.Location + "/file_name.extension"
 
-	fmt.Fprint(w, url)
+	fmt.Fprint(w, &DownloadResponse{ImageURL: url})
 }
 
 // GetRequestsHistory displays the user's request history.
 func (s *Server) GetRequestsHistory(w http.ResponseWriter, r *http.Request) {
-	// get userID from application context?
-
+	// get userID from application context
 	userID := "7186afcc-cae7-11eb-80ff-0bc45a674b3c"
 	requestsHistory, err := s.repo.GetRequestsByUserID(userID)
 	if err != nil {
