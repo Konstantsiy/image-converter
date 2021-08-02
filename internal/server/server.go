@@ -5,8 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
+
+	"github.com/Konstantsiy/image-converter/internal/converter"
 
 	"github.com/Konstantsiy/image-converter/internal/auth"
 	"github.com/Konstantsiy/image-converter/internal/hash"
@@ -49,13 +52,15 @@ type DownloadResponse struct {
 type Server struct {
 	repo         *repository.Repository
 	tokenManager *auth.TokenManager
+	conv         *converter.Converter
 }
 
 // NewServer creates new application server.
-func NewServer(repo *repository.Repository, tokenManager *auth.TokenManager) *Server {
+func NewServer(repo *repository.Repository, tokenManager *auth.TokenManager, conv *converter.Converter) *Server {
 	return &Server{
 		repo:         repo,
 		tokenManager: tokenManager,
+		conv:         conv,
 	}
 }
 
@@ -177,6 +182,13 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprint(err.Error()), http.StatusBadRequest)
 		return
 	}
+
+	convFile, err := s.conv.Convert(file, targetFormat, ratio)
+	if err != nil {
+		http.Error(w, "can't convert image:"+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer os.Remove(convFile.Name())
 
 	// ... next PRs
 }

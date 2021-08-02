@@ -4,6 +4,8 @@ package app
 import (
 	"net/http"
 
+	"github.com/Konstantsiy/image-converter/internal/converter"
+
 	"github.com/Konstantsiy/image-converter/internal/auth"
 	"github.com/Konstantsiy/image-converter/internal/config"
 	"github.com/Konstantsiy/image-converter/internal/repository"
@@ -22,8 +24,9 @@ func Start() error {
 
 	repo := repository.NewRepository()
 	tokenManager := auth.NewTokenManager(conf.PublicKey, conf.PrivateKey)
+	conv := converter.NewConverter()
 
-	s := server.NewServer(repo, tokenManager)
+	s := server.NewServer(repo, tokenManager, conv)
 	s.RegisterRoutes(r)
 	return http.ListenAndServe(":8080", r)
 }

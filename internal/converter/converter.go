@@ -8,7 +8,10 @@ import (
 	"image/png"
 	"mime/multipart"
 	"os"
+	"time"
 )
+
+const tempPath = "temp/"
 
 // Converter converts and compresses images.
 type Converter struct{}
@@ -25,7 +28,7 @@ func (c *Converter) Convert(file multipart.File, targetFormat string, ratio int)
 		return nil, err
 	}
 
-	outputFile, err := os.Create("temp/file." + targetFormat)
+	outputFile, err := os.Create(tempPath + time.Now().String() + "." + targetFormat)
 	if err != nil {
 		return nil, errors.New("can't create target file")
 	}
