@@ -41,12 +41,12 @@ type InvalidParameterError struct {
 	Message string
 }
 
-func (e InvalidParameterError) Error() string {
+func (e *InvalidParameterError) Error() string {
 	return fmt.Sprintf("invalid %s: %s", e.Param, e.Message)
 }
 
 // ValidateSignUpRequest validates user credentials.
-func ValidateSignUpRequest(email, password string) *InvalidParameterError {
+func ValidateSignUpRequest(email, password string) error {
 	if len(email) < minEmailLength {
 		return &InvalidParameterError{
 			Param:   "email",
@@ -89,11 +89,11 @@ func ValidateSignUpRequest(email, password string) *InvalidParameterError {
 		}
 	}
 
-	return &InvalidParameterError{}
+	return nil
 }
 
 // ValidateConversionRequest validates data from the conversion request body.
-func ValidateConversionRequest(filename, sourceFormat, targetFormat string, ratio int) *InvalidParameterError {
+func ValidateConversionRequest(filename, sourceFormat, targetFormat string, ratio int) error {
 	if len(filename) == 0 {
 		return &InvalidParameterError{
 			Param:   "filename",
@@ -136,5 +136,5 @@ func ValidateConversionRequest(filename, sourceFormat, targetFormat string, rati
 		}
 	}
 
-	return &InvalidParameterError{}
+	return nil
 }

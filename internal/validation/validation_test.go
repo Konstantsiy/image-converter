@@ -4,17 +4,17 @@ import (
 	"testing"
 )
 
-func assertNoError(t *testing.T, param string) {
+func assertNoError(t *testing.T, err error) {
 	t.Helper()
-	if param != "" {
-		t.Errorf("No error expected but got invalid %s", param)
+	if err != nil {
+		t.Errorf("No error expected but got: %v", err)
 	}
 }
 
 func assertError(t *testing.T, givenParam, expectedParam string) {
 	t.Helper()
 	if givenParam != expectedParam {
-		t.Errorf("Expected invalid %s, but got invalid %s", givenParam, expectedParam)
+		t.Errorf("Expected invalid %s, but got invalid %s", expectedParam, givenParam)
 	}
 }
 
@@ -71,10 +71,11 @@ func TestValidateSignUpRequest(t *testing.T) {
 
 	for _, tc := range testTable {
 		err := ValidateSignUpRequest(tc.Email, tc.Password)
+		verr, _ := err.(*InvalidParameterError)
 		if tc.IsErrorExpected {
-			assertError(t, err.Param, tc.ExpectedInvalidParam)
+			assertError(t, verr.Param, tc.ExpectedInvalidParam)
 		} else {
-			assertNoError(t, err.Param)
+			assertNoError(t, err)
 		}
 	}
 }
@@ -140,10 +141,11 @@ func TestValidateConversionRequest(t *testing.T) {
 
 	for _, tc := range testTable {
 		err := ValidateConversionRequest(tc.Filename, tc.SourceFormat, tc.TargetFormat, tc.Ratio)
+		verr, _ := err.(*InvalidParameterError)
 		if tc.IsErrorExpected {
-			assertError(t, err.Param, tc.ExpectedInvalidParam)
+			assertError(t, verr.Param, tc.ExpectedInvalidParam)
 		} else {
-			assertNoError(t, err.Param)
+			assertNoError(t, err)
 		}
 	}
 }
