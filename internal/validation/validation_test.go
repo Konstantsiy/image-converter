@@ -1,6 +1,8 @@
 package validation
 
-import "testing"
+import (
+	"testing"
+)
 
 func assertNoError(t *testing.T, err error) {
 	t.Helper()
@@ -9,139 +11,139 @@ func assertNoError(t *testing.T, err error) {
 	}
 }
 
-func assertError(t *testing.T, givenError, expectedError error) {
+func assertError(t *testing.T, givenParam, expectedParam string) {
 	t.Helper()
-	if givenError != expectedError {
-		t.Errorf("Expected %v, but got another one: %v", expectedError, givenError)
+	if givenParam != expectedParam {
+		t.Errorf("Expected invalid %s, but got invalid %s", expectedParam, givenParam)
 	}
 }
 
-// TestValidateUserCredentials tests ValidateUserCredentials function.
-func TestValidateUserCredentials(t *testing.T) {
+func TestValidateSignUpRequest(t *testing.T) {
 	testTable := []struct {
-		Email           string
-		Password        string
-		IsErrorExpected bool
-		ExpectedError   error
+		Email                string
+		Password             string
+		IsErrorExpected      bool
+		ExpectedInvalidParam string
 	}{
 		{
-			Email:           "Ivan.Ivanov@company.com",
-			Password:        "Simple_Password123",
-			IsErrorExpected: false,
-			ExpectedError:   nil,
+			Email:                "Ivan.Ivanov@company.com",
+			Password:             "Simple_Password123",
+			IsErrorExpected:      false,
+			ExpectedInvalidParam: "",
 		},
 		{
-			Email:           "@company.com",
-			Password:        "Simple_Password123",
-			IsErrorExpected: true,
-			ExpectedError:   errInvalidEmailFormat,
+			Email:                "@company.com",
+			Password:             "Simple_Password123",
+			IsErrorExpected:      true,
+			ExpectedInvalidParam: "email",
 		},
 		{
-			Email:           "@com1111111111",
-			Password:        "Simple_Password123",
-			IsErrorExpected: true,
-			ExpectedError:   errInvalidEmailFormat,
+			Email:                "@com1111111111",
+			Password:             "Simple_Password123",
+			IsErrorExpected:      true,
+			ExpectedInvalidParam: "email",
 		},
 		{
-			Email:           "",
-			Password:        "Simple_Password123",
-			IsErrorExpected: true,
-			ExpectedError:   errInvalidEmailLength,
+			Email:                "",
+			Password:             "Simple_Password123",
+			IsErrorExpected:      true,
+			ExpectedInvalidParam: "email",
 		},
 		{
-			Email:           "Ivan.Ivanov@company.com",
-			Password:        "ae3",
-			IsErrorExpected: true,
-			ExpectedError:   errInvalidPasswordLength,
+			Email:                "Ivan.Ivanov@company.com",
+			Password:             "ae3",
+			IsErrorExpected:      true,
+			ExpectedInvalidParam: "password",
 		},
 		{
-			Email:           "Ivan.Ivanov@company.com",
-			Password:        "simple_password123",
-			IsErrorExpected: true,
-			ExpectedError:   errNoOneUppercaseInPassword,
+			Email:                "Ivan.Ivanov@company.com",
+			Password:             "simple_password123",
+			IsErrorExpected:      true,
+			ExpectedInvalidParam: "password",
 		},
 		{
-			Email:           "Ivan.Ivanov@company.com",
-			Password:        "SIMPLE_PASSWORD123",
-			IsErrorExpected: true,
-			ExpectedError:   errNoOneLowercaseInPassword,
+			Email:                "Ivan.Ivanov@company.com",
+			Password:             "SIMPLE_PASSWORD123",
+			IsErrorExpected:      true,
+			ExpectedInvalidParam: "password",
 		},
 	}
 
 	for _, tc := range testTable {
-		err := ValidateUserCredentials(tc.Email, tc.Password)
+		err := ValidateSignUpRequest(tc.Email, tc.Password)
+		verr, _ := err.(*InvalidParameterError)
 		if tc.IsErrorExpected {
-			assertError(t, err, tc.ExpectedError)
+			assertError(t, verr.Param, tc.ExpectedInvalidParam)
 		} else {
 			assertNoError(t, err)
 		}
 	}
 }
 
-// TestValidateConversionRequest tests ValidateConversionRequest function.
 func TestValidateConversionRequest(t *testing.T) {
 	testTable := []struct {
-		Filename        string
-		SourceFormat    string
-		TargetFormat    string
-		Ratio           int
-		IsErrorExpected bool
-		ExpectedError   error
+		Filename             string
+		SourceFormat         string
+		TargetFormat         string
+		Ratio                int
+		IsErrorExpected      bool
+		ExpectedInvalidParam string
 	}{
 		{
-			Filename:        "filename",
-			SourceFormat:    "jpg",
-			TargetFormat:    "png",
-			Ratio:           3,
-			IsErrorExpected: false,
-			ExpectedError:   nil,
+			Filename:             "filename",
+			SourceFormat:         "jpg",
+			TargetFormat:         "png",
+			Ratio:                3,
+			IsErrorExpected:      false,
+			ExpectedInvalidParam: "",
 		},
 		{
-			Filename:        "file~name",
-			SourceFormat:    "jpg",
-			TargetFormat:    "png",
-			Ratio:           3,
-			IsErrorExpected: true,
-			ExpectedError:   errInvalidFilenameFormat,
+			Filename:             "file~name",
+			SourceFormat:         "jpg",
+			TargetFormat:         "png",
+			Ratio:                3,
+			IsErrorExpected:      true,
+			ExpectedInvalidParam: "filename",
 		},
 		{
-			Filename:        "filename",
-			SourceFormat:    "jpdfdfdg",
-			TargetFormat:    "png",
-			Ratio:           3,
-			IsErrorExpected: true,
-			ExpectedError:   errInvalidSourceFormat,
+			Filename:             "filename",
+			SourceFormat:         "jpdfdfdg",
+			TargetFormat:         "png",
+			Ratio:                3,
+			IsErrorExpected:      true,
+			ExpectedInvalidParam: "source format",
 		},
 		{
-			Filename:        "filename",
-			SourceFormat:    "jpg",
-			TargetFormat:    "pndssdg",
-			Ratio:           3,
-			IsErrorExpected: true,
-			ExpectedError:   errInvalidTargetFormat,
+			Filename:             "filename",
+			SourceFormat:         "jpg",
+			TargetFormat:         "pndssdg",
+			Ratio:                3,
+			IsErrorExpected:      true,
+			ExpectedInvalidParam: "target format",
 		},
 		{
-			Filename:        "filename",
-			SourceFormat:    "jpg",
-			TargetFormat:    "jpeg",
-			Ratio:           3,
-			IsErrorExpected: true,
-			ExpectedError:   errEqualsFormats,
+			Filename:             "filename",
+			SourceFormat:         "jpg",
+			TargetFormat:         "jpg",
+			Ratio:                3,
+			IsErrorExpected:      true,
+			ExpectedInvalidParam: "formats",
 		},
 		{
-			Filename:        "filename",
-			SourceFormat:    "jpg",
-			TargetFormat:    "png",
-			Ratio:           -3,
-			IsErrorExpected: true,
-			ExpectedError:   errInvalidRatio,
+			Filename:             "filename",
+			SourceFormat:         "jpg",
+			TargetFormat:         "png",
+			Ratio:                -3,
+			IsErrorExpected:      true,
+			ExpectedInvalidParam: "ratio",
 		},
 	}
 
 	for _, tc := range testTable {
 		err := ValidateConversionRequest(tc.Filename, tc.SourceFormat, tc.TargetFormat, tc.Ratio)
+		verr, _ := err.(*InvalidParameterError)
 		if tc.IsErrorExpected {
-			assertError(t, err, tc.ExpectedError)
+			assertError(t, verr.Param, tc.ExpectedInvalidParam)
 		} else {
 			assertNoError(t, err)
 		}
