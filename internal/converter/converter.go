@@ -3,6 +3,7 @@ package converter
 
 import (
 	"errors"
+	"fmt"
 	"image"
 	"image/jpeg"
 	"image/png"
@@ -11,7 +12,12 @@ import (
 	"time"
 )
 
-const tempPath = "temp/"
+const (
+	TempPath   = "temp/"
+	FormatJPEG = "jpeg"
+	FormatJPG  = "jpg"
+	FormatPNG  = "png"
+)
 
 // Converter converts and compresses images.
 type Converter struct{}
@@ -28,27 +34,26 @@ func (c *Converter) Convert(file multipart.File, targetFormat string, ratio int)
 		return nil, err
 	}
 
-	outputFile, err := os.Create(tempPath + time.Now().String() + "." + targetFormat)
+	outputFile, err := os.Create(TempPath + time.Now().String() + "." + targetFormat)
 	if err != nil {
 		return nil, errors.New("can't create target file")
 	}
 
 	switch targetFormat {
-	case "png":
+	case FormatPNG:
 		var enc png.Encoder
 		enc.CompressionLevel = png.CompressionLevel(ratio)
 		err := enc.Encode(outputFile, imageData)
 		if err != nil {
 			return nil, err
 		}
-	case "jpeg":
-	case "jpg":
+	case FormatJPEG, FormatJPG:
 		{
 			err := jpeg.Encode(outputFile, imageData, &jpeg.Options{
 				Quality: ratio,
 			})
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("can't convert image file: %w", err)
 			}
 		}
 	}
