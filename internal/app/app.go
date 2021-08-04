@@ -4,13 +4,11 @@ package app
 import (
 	"net/http"
 
-	"github.com/Konstantsiy/image-converter/internal/storage"
-
-	"github.com/Konstantsiy/image-converter/internal/config"
-
 	"github.com/Konstantsiy/image-converter/internal/auth"
+	"github.com/Konstantsiy/image-converter/internal/config"
 	"github.com/Konstantsiy/image-converter/internal/repository"
 	"github.com/Konstantsiy/image-converter/internal/server"
+	"github.com/Konstantsiy/image-converter/internal/storage"
 	"github.com/gorilla/mux"
 )
 
@@ -18,11 +16,13 @@ import (
 func Start() error {
 	r := mux.NewRouter()
 
-	var conf config.Config
-	conf.Load()
+	conf, err := config.Load()
+	if err != nil {
+		return err
+	}
 
 	repo := repository.NewRepository()
-	tokenManager := auth.NewTokenManager(conf.PrivateKey)
+	tokenManager := auth.NewTokenManager(conf.PublicKey, conf.PrivateKey)
 
 	st := storage.NewStorage(storage.S3Config{
 		Region:          conf.Region,
@@ -30,12 +30,12 @@ func Start() error {
 		SecretAccessKey: conf.SecretAccessKey,
 		BucketName:      conf.BucketName,
 	})
-	err := st.InitS3ServiceClient()
+	err = st.InitS3ServiceClient()
 	if err != nil {
 		return err
 	}
 
-	s := server.NewServer(repo, tokenManager, st)
+	s := server.NewServer(repo, tokenManager)
 	s.RegisterRoutes(r)
 	return http.ListenAndServe(":"+conf.Port, r)
 }
