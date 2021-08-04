@@ -31,7 +31,7 @@ func NewConverter() *Converter {
 func (c *Converter) Convert(file multipart.File, targetFormat string, ratio int) (*os.File, error) {
 	imageData, _, err := image.Decode(file)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can't decode source file: %w", err)
 	}
 
 	outputFile, err := os.Create(TempPath + time.Now().String() + "." + targetFormat)
@@ -45,7 +45,7 @@ func (c *Converter) Convert(file multipart.File, targetFormat string, ratio int)
 		enc.CompressionLevel = png.CompressionLevel(ratio)
 		err := enc.Encode(outputFile, imageData)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("can't convert image to %s format: %w", FormatJPG, err)
 		}
 	case FormatJPEG, FormatJPG:
 		{
@@ -53,7 +53,7 @@ func (c *Converter) Convert(file multipart.File, targetFormat string, ratio int)
 				Quality: ratio,
 			})
 			if err != nil {
-				return nil, fmt.Errorf("can't convert image file: %w", err)
+				return nil, fmt.Errorf("can't convert image to %s format: %w", FormatJPG, err)
 			}
 		}
 	}
