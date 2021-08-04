@@ -28,7 +28,8 @@ func Start() error {
 		Region:          conf.Region,
 		AccessKeyID:     conf.AccessKeyID,
 		SecretAccessKey: conf.SecretAccessKey,
-	}, conf.BucketName)
+		BucketName:      conf.BucketName,
+	})
 	err := st.InitS3ServiceClient()
 	if err != nil {
 		return err
@@ -36,5 +37,5 @@ func Start() error {
 
 	s := server.NewServer(repo, tokenManager, st)
 	s.RegisterRoutes(r)
-	return http.ListenAndServe(":8080", r)
+	return http.ListenAndServe(":"+conf.Port, r)
 }
