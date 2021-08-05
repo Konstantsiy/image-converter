@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 
@@ -183,12 +182,12 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	convFile, err := s.conv.Convert(file, targetFormat, ratio)
+	// get (io.ReadSeeker, error) for AWS bucket
+	_, err = s.conv.Convert(file, targetFormat, ratio)
 	if err != nil {
 		http.Error(w, "can't convert image:"+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	defer os.Remove(convFile.Name())
 
 	// ... next PRs
 }
