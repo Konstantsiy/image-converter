@@ -23,6 +23,7 @@ func Start() error {
 	}
 
 	repo := repository.NewRepository()
+
 	tokenManager := auth.NewTokenManager(conf.PublicKey, conf.PrivateKey)
 	conv := converter.NewConverter()
 
