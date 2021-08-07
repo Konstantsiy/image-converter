@@ -12,7 +12,6 @@ import (
 )
 
 const (
-	TempPath   = "temp/"
 	FormatJPEG = "jpeg"
 	FormatJPG  = "jpg"
 	FormatPNG  = "png"
