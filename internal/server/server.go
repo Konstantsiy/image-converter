@@ -10,6 +10,7 @@ import (
 
 	"github.com/Konstantsiy/image-converter/internal/appcontext"
 	"github.com/Konstantsiy/image-converter/internal/auth"
+	"github.com/Konstantsiy/image-converter/internal/converter"
 	"github.com/Konstantsiy/image-converter/internal/hash"
 	"github.com/Konstantsiy/image-converter/internal/repository"
 	"github.com/Konstantsiy/image-converter/internal/validation"
@@ -206,6 +207,13 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 
 	if err = validation.ValidateConversionRequest(filename, sourceFormat, targetFormat, ratio); err != nil {
 		http.Error(w, fmt.Sprint(err.Error()), http.StatusBadRequest)
+		return
+	}
+
+	// get (io.ReadSeeker, error) for AWS bucket
+	_, err = converter.Convert(file, targetFormat, ratio)
+	if err != nil {
+		http.Error(w, "can't convert image:"+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
