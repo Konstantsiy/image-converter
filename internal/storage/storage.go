@@ -36,13 +36,13 @@ type S3Config struct {
 	BucketName      string
 }
 
-//Storage implements the functionality of file storage (Amazon S3).
+// Storage implements the functionality of file storage (Amazon S3).
 type Storage struct {
 	svc    *s3.S3
 	s3conf *S3Config
 }
 
-//NewStorage creates new file storage with the given S3 configs and bucket name.
+// NewStorage creates new file storage with the given S3 configs and bucket name.
 func NewStorage(s3conf S3Config) *Storage {
 	return &Storage{
 		svc:    &s3.S3{},
@@ -50,7 +50,7 @@ func NewStorage(s3conf S3Config) *Storage {
 	}
 }
 
-//InitS3ServiceClient initializes SDK's service client.
+// InitS3ServiceClient initializes SDK's service client.
 func (s *Storage) InitS3ServiceClient() error {
 	s3session, err := s.createSession()
 	if err != nil {
@@ -61,7 +61,7 @@ func (s *Storage) InitS3ServiceClient() error {
 	return nil
 }
 
-//createSession creates and returns a new session.
+// createSession creates and returns a new session.
 func (s *Storage) createSession() (*session.Session, error) {
 	s3session, err := session.NewSession(&aws.Config{
 		Region:      aws.String(s.s3conf.Region),
@@ -73,7 +73,7 @@ func (s *Storage) createSession() (*session.Session, error) {
 	return s3session, nil
 }
 
-//UploadFile uploads the given file to the bucket.
+// UploadFile uploads the given file to the bucket.
 func (s *Storage) UploadFile(reader io.ReadSeeker) (string, string, error) {
 	fileUUID := uuid.NewV4()
 	fileUUIDStr := fileUUID.String()
@@ -92,7 +92,7 @@ func (s *Storage) UploadFile(reader io.ReadSeeker) (string, string, error) {
 	return fileUUIDStr, location, nil
 }
 
-//GetDownloadURL returns URL to download а file from the bucket by the given file location.
+// GetDownloadURL returns URL to download а file from the bucket by the given file location.
 func (s *Storage) GetDownloadURL(location string) (string, error) {
 	req, _ := s.svc.GetObjectRequest(&s3.GetObjectInput{
 		Bucket: aws.String(s.s3conf.BucketName),
