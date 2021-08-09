@@ -18,12 +18,12 @@ const (
 	LocationTemplate = "https://%s.amazonaws.com/%s/%s"
 )
 
-//S3Error represent storage-related errors.
+// S3Error represent storage-related errors.
 type S3Error struct {
 	message string
 }
 
-func (s3err *S3Error) Error() string {
+func (s3err S3Error) Error() string {
 	return fmt.Sprintf("storage error: %s", s3err.message)
 }
 
