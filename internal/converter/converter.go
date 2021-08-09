@@ -8,7 +8,6 @@ import (
 	"image/jpeg"
 	"image/png"
 	"io"
-	"mime/multipart"
 )
 
 const (
@@ -17,17 +16,9 @@ const (
 	FormatPNG  = "png"
 )
 
-// Converter converts and compresses images.
-type Converter struct{}
-
-// NewConverter creates new converter.
-func NewConverter() *Converter {
-	return &Converter{}
-}
-
 // Convert converts and compresses the given image file according to the target format and compression ratio.
-func (c *Converter) Convert(file multipart.File, targetFormat string, ratio int) (io.ReadSeeker, error) {
-	imageData, _, err := image.Decode(file)
+func Convert(reader io.Reader, targetFormat string, ratio int) (io.ReadSeeker, error) {
+	imageData, _, err := image.Decode(reader)
 	if err != nil {
 		return nil, fmt.Errorf("can't decode source file: %w", err)
 	}
@@ -43,14 +34,14 @@ func (c *Converter) Convert(file multipart.File, targetFormat string, ratio int)
 			return nil, fmt.Errorf("can't convert image to %s format: %w", FormatJPG, err)
 		}
 	case FormatJPEG, FormatJPG:
-		{
-			err := jpeg.Encode(buf, imageData, &jpeg.Options{
-				Quality: ratio,
-			})
-			if err != nil {
-				return nil, fmt.Errorf("can't convert image to %s format: %w", FormatJPG, err)
-			}
+		err := jpeg.Encode(buf, imageData, &jpeg.Options{
+			Quality: ratio,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("can't convert image to %s format: %w", FormatJPG, err)
 		}
+	default:
+		return nil, fmt.Errorf("unsupported format: %s", targetFormat)
 	}
 
 	return bytes.NewReader(buf.Bytes()), nil

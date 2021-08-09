@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Konstantsiy/image-converter/internal/converter"
 	"github.com/Konstantsiy/image-converter/internal/appcontext"
 	"github.com/Konstantsiy/image-converter/internal/auth"
+	"github.com/Konstantsiy/image-converter/internal/converter"
 	"github.com/Konstantsiy/image-converter/internal/hash"
 	"github.com/Konstantsiy/image-converter/internal/repository"
 	"github.com/Konstantsiy/image-converter/internal/validation"
@@ -56,15 +56,13 @@ type DownloadResponse struct {
 type Server struct {
 	repo         *repository.Repository
 	tokenManager *auth.TokenManager
-	conv         *converter.Converter
 }
 
 // NewServer creates new application server.
-func NewServer(repo *repository.Repository, tokenManager *auth.TokenManager, conv *converter.Converter) *Server {
+func NewServer(repo *repository.Repository, tokenManager *auth.TokenManager) *Server {
 	return &Server{
 		repo:         repo,
 		tokenManager: tokenManager,
-		conv:         conv,
 	}
 }
 
@@ -213,7 +211,7 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get (io.ReadSeeker, error) for AWS bucket
-	_, err = s.conv.Convert(file, targetFormat, ratio)
+	_, err = converter.Convert(file, targetFormat, ratio)
 	if err != nil {
 		http.Error(w, "can't convert image:"+err.Error(), http.StatusInternalServerError)
 		return
