@@ -6,11 +6,12 @@ import (
 	"io"
 	"time"
 
+	uuid "github.com/satori/go.uuid"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	uuid "github.com/satori/go.uuid"
 )
 
 const (
@@ -68,28 +69,27 @@ func (s *Storage) createSession() (*session.Session, error) {
 		Credentials: credentials.NewStaticCredentials(s.s3conf.AccessKeyID, s.s3conf.SecretAccessKey, ""),
 	})
 	if err != nil {
-		return nil, &S3Error{err.Error()}
+		return nil, &S3Error{fmt.Sprintf("can't create session, %v", err)}
 	}
 	return s3session, nil
 }
 
-// UploadFile uploads the given file to the bucket.
-func (s *Storage) UploadFile(reader io.ReadSeeker) (string, string, error) {
-	fileUUID := uuid.NewV4()
-	fileUUIDStr := fileUUID.String()
-	location := fmt.Sprintf(LocationTemplate, s.s3conf.Region, s.s3conf.BucketName, fileUUID)
+// UploadFile uploads the given file to the bucket and returns the generated file location.
+func (s *Storage) UploadFile(file io.ReadSeeker) (string, error) {
+	secretFileKey := uuid.NewV4()
+	fileLocation := fmt.Sprintf(LocationTemplate, s.s3conf.Region, s.s3conf.BucketName, secretFileKey.String())
 
 	_, err := s.svc.PutObject(&s3.PutObjectInput{
-		Body:   reader,
+		Body:   file,
 		Bucket: aws.String(s.s3conf.BucketName),
-		Key:    aws.String(location),
+		Key:    aws.String(fileLocation),
 		ACL:    aws.String(s3.BucketCannedACLPublicRead),
 	})
 	if err != nil {
-		return "", "", &S3Error{err.Error()}
+		return "", &S3Error{err.Error()}
 	}
 
-	return fileUUIDStr, location, nil
+	return fileLocation, nil
 }
 
 // GetDownloadURL returns URL to download а file from the bucket by the given file location.
