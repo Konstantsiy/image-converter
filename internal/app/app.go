@@ -2,6 +2,7 @@
 package app
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/Konstantsiy/image-converter/internal/auth"
@@ -24,18 +25,17 @@ func Start() error {
 	repo := repository.NewRepository()
 	tokenManager := auth.NewTokenManager(conf.PublicKey, conf.PrivateKey)
 
-	st := storage.NewStorage(storage.S3Config{
+	st, err := storage.NewStorage(storage.S3Config{
 		Region:          conf.Region,
 		AccessKeyID:     conf.AccessKeyID,
 		SecretAccessKey: conf.SecretAccessKey,
 		BucketName:      conf.BucketName,
 	})
-	err = st.InitS3ServiceClient()
 	if err != nil {
-		return err
+		return fmt.Errorf("storage error: %v", err)
 	}
 
-	s := server.NewServer(repo, tokenManager)
+	s := server.NewServer(repo, tokenManager, st)
 	s.RegisterRoutes(r)
 	return http.ListenAndServe(":"+conf.Port, r)
 }

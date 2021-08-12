@@ -21,8 +21,8 @@ func TestLoad(t *testing.T) {
 	os.Setenv("JWT_PRIVATE_KEY", "1234567")
 
 	os.Setenv("AWS_REGION", "eu-central-1")
-	os.Setenv("AWS_ACCESS_KEY_ID", "AKIAUTWMM3GR4BUJVGPS")
-	os.Setenv("AWS_SECRET_ACCESS_KEY", "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")
+	os.Setenv("AWS_ACCESS_KEY_ID", "SGFHSGDHFSGF")
+	os.Setenv("AWS_SECRET_ACCESS_KEY", "SDFSDFDSFSF84378FDSFSDFSDFD")
 	os.Setenv("AWS_BUCKET_NAME", "name1234")
 
 	actual, err := Load()
@@ -40,8 +40,8 @@ func TestLoad(t *testing.T) {
 		PrivateKey: "1234567",
 
 		Region:          "eu-central-1",
-		AccessKeyID:     "AKIAUTWMM3GR4BUJVGPS",
-		SecretAccessKey: "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",
+		AccessKeyID:     "SGFHSGDHFSGF",
+		SecretAccessKey: "SDFSDFDSFSF84378FDSFSDFSDFD",
 		BucketName:      "name1234",
 	}
 	require.Equal(expected, actual)

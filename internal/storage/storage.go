@@ -6,27 +6,13 @@ import (
 	"io"
 	"time"
 
-	uuid "github.com/satori/go.uuid"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
-const (
-	URLTimeout       = 10 * time.Minute
-	LocationTemplate = "https://%s.amazonaws.com/%s/%s"
-)
-
-// S3Error represent storage-related errors.
-type S3Error struct {
-	message string
-}
-
-func (s3err S3Error) Error() string {
-	return fmt.Sprintf("storage error: %s", s3err.message)
-}
+const URLTimeout = 10 * time.Minute
 
 // S3Config used to configure the session, create a bucket,
 // and connect to the SDK's service client.
@@ -40,68 +26,79 @@ type S3Config struct {
 // Storage implements the functionality of file storage (Amazon S3).
 type Storage struct {
 	svc    *s3.S3
-	s3conf *S3Config
+	s3conf S3Config
 }
 
 // NewStorage creates new file storage with the given S3 configs and bucket name.
-func NewStorage(s3conf S3Config) *Storage {
-	return &Storage{
-		svc:    &s3.S3{},
-		s3conf: &s3conf,
+func NewStorage(s3conf S3Config) (*Storage, error) {
+	err := validateAWSConfig(s3conf)
+	if err != nil {
+		return nil, err
 	}
+
+	svc, err := initS3ServiceClient(s3conf)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Storage{svc: svc, s3conf: s3conf}, nil
 }
 
-// InitS3ServiceClient initializes SDK's service client.
-func (s *Storage) InitS3ServiceClient() error {
-	s3session, err := s.createSession()
-	if err != nil {
-		return &S3Error{err.Error()}
+// validateAWSConfig validates AWS configurations.
+func validateAWSConfig(s3conf S3Config) error {
+	if s3conf.BucketName == "" || s3conf.SecretAccessKey == "" || s3conf.AccessKeyID == "" || s3conf.Region == "" {
+		return fmt.Errorf("AWS configurations should not be empty")
 	}
-
-	s.svc = s3.New(s3session)
 	return nil
 }
 
+// initS3ServiceClient initializes SDK's service client.
+func initS3ServiceClient(s3conf S3Config) (*s3.S3, error) {
+	s3session, err := createSession(s3conf)
+	if err != nil {
+		return nil, err
+	}
+
+	return s3.New(s3session), nil
+}
+
 // createSession creates and returns a new session.
-func (s *Storage) createSession() (*session.Session, error) {
+func createSession(s3conf S3Config) (*session.Session, error) {
 	s3session, err := session.NewSession(&aws.Config{
-		Region:      aws.String(s.s3conf.Region),
-		Credentials: credentials.NewStaticCredentials(s.s3conf.AccessKeyID, s.s3conf.SecretAccessKey, ""),
+		Region:      aws.String(s3conf.Region),
+		Credentials: credentials.NewStaticCredentials(s3conf.AccessKeyID, s3conf.SecretAccessKey, ""),
 	})
 	if err != nil {
-		return nil, &S3Error{fmt.Sprintf("can't create session, %v", err)}
+		return nil, fmt.Errorf("can't create session, %v", err)
 	}
 	return s3session, nil
 }
 
-// UploadFile uploads the given file to the bucket and returns the generated file location.
-func (s *Storage) UploadFile(file io.ReadSeeker) (string, error) {
-	secretFileKey := uuid.NewV4()
-	fileLocation := fmt.Sprintf(LocationTemplate, s.s3conf.Region, s.s3conf.BucketName, secretFileKey.String())
-
+// UploadFile uploads the given file to the bucket.
+func (s *Storage) UploadFile(file io.ReadSeeker, fileID string) error {
 	_, err := s.svc.PutObject(&s3.PutObjectInput{
 		Body:   file,
 		Bucket: aws.String(s.s3conf.BucketName),
-		Key:    aws.String(fileLocation),
+		Key:    aws.String(fileID),
 		ACL:    aws.String(s3.BucketCannedACLPublicRead),
 	})
 	if err != nil {
-		return "", &S3Error{err.Error()}
+		return fmt.Errorf("can't upload file to storage: %v", err)
 	}
 
-	return fileLocation, nil
+	return nil
 }
 
-// GetDownloadURL returns URL to download а file from the bucket by the given file location.
-func (s *Storage) GetDownloadURL(location string) (string, error) {
+// GetDownloadURL returns URL to download а file from the bucket by the given file id.
+func (s *Storage) GetDownloadURL(fileID string) (string, error) {
 	req, _ := s.svc.GetObjectRequest(&s3.GetObjectInput{
 		Bucket: aws.String(s.s3conf.BucketName),
-		Key:    aws.String(location),
+		Key:    aws.String(fileID),
 	})
 
 	url, err := req.Presign(URLTimeout)
 	if err != nil {
-		return "", &S3Error{fmt.Sprintf("can't create requets's presigned URL, %s", err.Error())}
+		return "", fmt.Errorf("can't create requets's presigned URL, %v", err)
 	}
 
 	return url, err
