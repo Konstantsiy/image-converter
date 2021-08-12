@@ -28,7 +28,7 @@ const (
 	maxPasswordLength = 20
 	minEmailLength    = 8
 	minRatio          = 1
-	maxRatio          = 9
+	maxRatio          = 99
 )
 
 var formats = map[string]struct{}{

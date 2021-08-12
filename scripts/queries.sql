@@ -32,9 +32,9 @@ and r.user_id = '7186afcc-cae7-11eb-80ff-0bc45a674b3c';
 
 
 -- upload an image and add the converted one
-insert into converter.images (name, format, location)
-values ('image1', 'png', 'location1'),
-       ('image2', 'jpeg', 'location2');
+insert into converter.images (name, format)
+values ('image1', 'png'),
+       ('image2', 'jpeg');
 
 
 -- create a request
