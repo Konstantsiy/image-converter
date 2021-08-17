@@ -2,6 +2,7 @@
 package app
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/Konstantsiy/image-converter/internal/auth"
@@ -20,8 +21,13 @@ func Start() error {
 		return err
 	}
 
-	repo := repository.NewRepository()
+	db, err := repository.NewPostgresDB(&conf)
+	if err != nil {
+		return fmt.Errorf("can't connect to postgres database: %v", err)
+	}
+	defer db.Close()
 
+	repo := repository.NewRepository(db)
 	tokenManager := auth.NewTokenManager(conf.PublicKey, conf.PrivateKey)
 
 	s := server.NewServer(repo, tokenManager)
