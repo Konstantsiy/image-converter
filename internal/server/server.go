@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Konstantsiy/image-converter/internal/storage"
+
 	"github.com/Konstantsiy/image-converter/internal/appcontext"
 	"github.com/Konstantsiy/image-converter/internal/auth"
 	"github.com/Konstantsiy/image-converter/internal/converter"
@@ -56,13 +58,15 @@ type DownloadResponse struct {
 type Server struct {
 	repo         *repository.Repository
 	tokenManager *auth.TokenManager
+	storage      *storage.Storage
 }
 
 // NewServer creates new application server.
-func NewServer(repo *repository.Repository, tokenManager *auth.TokenManager) *Server {
+func NewServer(repo *repository.Repository, tokenManager *auth.TokenManager, storage *storage.Storage) *Server {
 	return &Server{
 		repo:         repo,
 		tokenManager: tokenManager,
+		storage:      storage,
 	}
 }
 
