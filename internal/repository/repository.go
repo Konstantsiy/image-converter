@@ -75,10 +75,12 @@ func (r *Repository) InsertUser(email, password string) (string, error) {
 	return userID, nil
 }
 
-// InsertImage inserts the image into users table and returns image id.
+// InsertImage inserts the image into images table and returns image id.
 func (r *Repository) InsertImage(filename, format string) error {
-	const query = "insert into converter.images (name, format) values ($1, $2);"
-	_, err := r.db.Exec(query, filename, format)
+	var imageID string
+	const query = "insert into converter.images (name, format) values ($1, $2) returning id;"
+
+	err := r.db.QueryRow(query, filename, format).Scan(&imageID)
 	if err != nil {
 		return fmt.Errorf("can't insert image: %w", err)
 	}
