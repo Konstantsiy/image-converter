@@ -229,9 +229,20 @@ func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	imageID := vars["id"]
 
+	exists, err := s.repo.ImageExists(imageID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !exists {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
 	url, err := s.storage.GetDownloadURL(imageID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	fmt.Fprint(w, url)
