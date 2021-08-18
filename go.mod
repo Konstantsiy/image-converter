@@ -3,6 +3,7 @@ module github.com/Konstantsiy/image-converter
 go 1.13
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/aws/aws-sdk-go v1.40.14
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gorilla/mux v1.8.0
