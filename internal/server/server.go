@@ -221,25 +221,7 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 }
 
 // DownloadImage allows you to download original/converted image by id.
-func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	imageID := vars["id"]
-
-	image, err := s.repo.GetImageByID(imageID)
-	if err == repository.ErrNoSuchImage {
-		http.Error(w, "can't get image info: "+err.Error(), http.StatusNotFound)
-		return
-	}
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// get image downloaded URL from storage by image.Location
-	url := "http(s)://s3.amazonaws.com/" + image.Location + "/file_name.extension"
-
-	fmt.Fprint(w, &DownloadResponse{ImageURL: url})
-}
+func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {}
 
 // GetRequestsHistory displays the user's request history.
 func (s *Server) GetRequestsHistory(w http.ResponseWriter, r *http.Request) {
