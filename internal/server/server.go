@@ -225,7 +225,17 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 }
 
 // DownloadImage allows you to download original/converted image by id.
-func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	imageID := vars["id"]
+
+	url, err := s.storage.GetDownloadURL(imageID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	fmt.Fprint(w, url)
+}
 
 // GetRequestsHistory displays the user's request history.
 func (s *Server) GetRequestsHistory(w http.ResponseWriter, r *http.Request) {
