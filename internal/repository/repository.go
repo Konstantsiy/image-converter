@@ -101,19 +101,6 @@ func (r *Repository) GetUserByEmail(email string) (User, error) {
 	return user, nil
 }
 
-// GetImageByID gets the information about the image by given id.
-func (r *Repository) GetImageByID(imageId string) (Image, error) {
-	var image Image
-	const query = "select id, name, format, location from converter.images where id=$1;"
-
-	err := r.db.QueryRow(query, imageId).Scan(&image.ID, &image.Name, &image.Format)
-	if err == sql.ErrNoRows {
-		return Image{}, ErrNoSuchImage
-	}
-
-	return image, nil
-}
-
 // GetRequestsByUserID gets the information about requests by given user id.
 func (r *Repository) GetRequestsByUserID(userID string) ([]ConversionRequest, error) {
 	var requests []ConversionRequest
