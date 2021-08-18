@@ -159,13 +159,26 @@ func (r *Repository) GetRequestsByUserID(userID string) ([]ConversionRequest, er
 }
 
 // MakeRequest creates the conversion request and returns its id.
-func (r *Repository) MakeRequest(filename, userID, sourceFormat, targetFormat string, ratio int) (string, error) {
-	tx, err := r.db.Begin()
-	if err != nil {
-		return "", err
+func (r *Repository) MakeRequest(filename, userID, sourceFormat, targetFormat string, ratio int) (id string, resultErr error) {
+	tx, txErr := r.db.Begin()
+	if txErr != nil {
+		return "", fmt.Errorf("transaction start error: %v", txErr)
 	}
+	defer func() {
+		switch txErr {
+		case nil:
+			err := tx.Commit()
+			if err != nil {
+				resultErr = fmt.Errorf("transaction commit error: %v", err)
+			}
+		default:
+			err := tx.Rollback()
+			if err != nil {
+				resultErr = fmt.Errorf("transaction rollback error: %v", err)
+			}
+		}
+	}()
 
-	var requestID string
 	const (
 		insertImageQuery   = "insert into converter.images (name, format) values ($1, $2) returning id;"
 		insertRequestQuery = `insert into converter.requests 
@@ -175,19 +188,18 @@ func (r *Repository) MakeRequest(filename, userID, sourceFormat, targetFormat st
 	)
 
 	var imageID string
-	err = tx.QueryRow(insertImageQuery, filename, sourceFormat).Scan(&imageID)
-	if err != nil {
-		tx.Rollback()
-		return "", err
+	txErr = tx.QueryRow(insertImageQuery, filename, sourceFormat).Scan(&imageID)
+	if txErr != nil {
+		return "", fmt.Errorf("can't insert image: %v", txErr)
 	}
 
-	err = tx.QueryRow(insertRequestQuery, userID, imageID, sourceFormat, targetFormat, ratio).Scan(&requestID)
-	if err != nil {
-		tx.Rollback()
-		return "", err
+	var requestID string
+	txErr = tx.QueryRow(insertRequestQuery, userID, imageID, sourceFormat, targetFormat, ratio).Scan(&requestID)
+	if txErr != nil {
+		return "", fmt.Errorf("can't make request: %v", txErr)
 	}
 
-	return requestID, tx.Commit()
+	return requestID, txErr
 }
 
 // UpdateRequest updates the request status and the id of the target image.
