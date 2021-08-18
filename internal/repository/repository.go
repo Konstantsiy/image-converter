@@ -64,12 +64,11 @@ func (r *Repository) InsertUser(email, password string) (string, error) {
 	const query = "insert into converter.users (email, password) values ($1, $2) returning id;"
 
 	err := r.db.QueryRow(query, email, password).Scan(&userID)
-	if err, ok := err.(*pq.Error); ok {
-		if err.Code == uniqueViolationCode {
-			return "", ErrUserAlreadyExists
-		} else {
-			return "", fmt.Errorf("can't insert user: %s", err.Code.Name())
-		}
+	if err, ok := err.(*pq.Error); ok && err.Code == uniqueViolationCode {
+		return "", ErrUserAlreadyExists
+	}
+	if err != nil {
+		return "", fmt.Errorf("can't insert user: %v", err)
 	}
 
 	return userID, nil
@@ -89,19 +88,19 @@ func (r *Repository) InsertImage(filename, format string) error {
 }
 
 // ImageExists checks the presence of an image in the database by given id.
-func (r *Repository) ImageExists(imageID string) (bool, error) {
+func (r *Repository) ImageExists(imageID string) error {
 	var exists bool
 	const query = "select exists (select name from converter.images where id=$1);"
 
 	err := r.db.QueryRow(query, imageID).Scan(&exists)
-	if err != nil && err != sql.ErrNoRows {
-		return false, fmt.Errorf("error in image checking: %v", err)
-	}
 	if err == sql.ErrNoRows {
-		return false, ErrNoSuchImage
+		return ErrNoSuchImage
+	}
+	if err != nil {
+		return fmt.Errorf("error in image checking: %v", err)
 	}
 
-	return exists, nil
+	return nil
 }
 
 // GetUserByEmail gets the information about the user by given email.
@@ -110,11 +109,11 @@ func (r *Repository) GetUserByEmail(email string) (User, error) {
 	const query = "select id, email, password from converter.users where email = $1;"
 
 	err := r.db.QueryRow(query, email).Scan(&user.ID, &user.Email, &user.Password)
-	if err != nil && err != sql.ErrNoRows {
-		return User{}, fmt.Errorf("error in the user selection: %v", err)
-	}
 	if err == sql.ErrNoRows {
 		return User{}, ErrNoSuchUser
+	}
+	if err != nil {
+		return User{}, fmt.Errorf("error in the user selection: %v", err)
 	}
 
 	return user, nil
@@ -129,7 +128,7 @@ func (r *Repository) GetRequestsByUserID(userID string) ([]ConversionRequest, er
 
 	rows, err := r.db.Query(query, userID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can't get user requests: %v", err)
 	}
 	defer rows.Close()
 
@@ -147,13 +146,13 @@ func (r *Repository) GetRequestsByUserID(userID string) ([]ConversionRequest, er
 			request.Created,
 			request.Updated)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("can't scan user request from rows: %v", err)
 		}
 		requests = append(requests, request)
 	}
 
 	if err = rows.Err(); err != nil {
-		return requests, err
+		return requests, fmt.Errorf("error selecting rows: %v", err)
 	}
 
 	return requests, nil
@@ -161,9 +160,9 @@ func (r *Repository) GetRequestsByUserID(userID string) ([]ConversionRequest, er
 
 // MakeRequest creates the conversion request and returns its id.
 func (r *Repository) MakeRequest(filename, userID, sourceFormat, targetFormat string, ratio int) (string, error) {
-	tx, txErr := r.db.Begin()
-	if txErr != nil {
-		return "", txErr
+	tx, err := r.db.Begin()
+	if err != nil {
+		return "", err
 	}
 
 	var requestID string
@@ -176,16 +175,16 @@ func (r *Repository) MakeRequest(filename, userID, sourceFormat, targetFormat st
 	)
 
 	var imageID string
-	txErr = tx.QueryRow(insertImageQuery, filename, sourceFormat).Scan(&imageID)
-	if txErr != nil {
+	err = tx.QueryRow(insertImageQuery, filename, sourceFormat).Scan(&imageID)
+	if err != nil {
 		tx.Rollback()
-		return "", txErr
+		return "", err
 	}
 
-	txErr = tx.QueryRow(insertRequestQuery, userID, imageID, sourceFormat, targetFormat, ratio).Scan(&requestID)
-	if txErr != nil {
+	err = tx.QueryRow(insertRequestQuery, userID, imageID, sourceFormat, targetFormat, ratio).Scan(&requestID)
+	if err != nil {
 		tx.Rollback()
-		return "", txErr
+		return "", err
 	}
 
 	return requestID, tx.Commit()
@@ -201,12 +200,12 @@ func (r *Repository) UpdateRequest(requestID, status, targetID string) error {
 	const query = "update converter.requests set target_id=$2, status=$3, updated=default where id=$1;"
 	res, err := r.db.Exec(query, requestID, sqlTargetID, status)
 	if err != nil {
-		return err
+		return fmt.Errorf("can't update request: %v", err)
 	}
 
 	count, err := res.RowsAffected()
 	if err != nil {
-		return err
+		return fmt.Errorf("can't get the number of rows affected by an update: %v", err)
 	}
 	if count == 0 {
 		return ErrNoSuchRequest
