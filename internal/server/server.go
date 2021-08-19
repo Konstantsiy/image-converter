@@ -7,6 +7,9 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/Konstantsiy/image-converter/internal/logger"
 
 	"github.com/Konstantsiy/image-converter/internal/appcontext"
 	"github.com/Konstantsiy/image-converter/internal/auth"
@@ -20,6 +23,8 @@ import (
 const (
 	AuthorizationHeader  = "Authorization"
 	NeededSecurityScheme = "Bearer"
+
+	DefaultStatusCode = 200
 )
 
 // AuthRequest represents the user's authorization request.
@@ -50,6 +55,18 @@ type SignUpResponse struct {
 //DownloadResponse represents downloaded image URL.
 type DownloadResponse struct {
 	ImageURL string `json:"image_url"`
+}
+
+// StatusRecorder logs http requests.
+type StatusRecorder struct {
+	http.ResponseWriter
+	StatusCode int
+}
+
+// WriteHeader saves status code.
+func (r *StatusRecorder) WriteHeader(statusCode int) {
+	r.StatusCode = statusCode
+	r.ResponseWriter.WriteHeader(statusCode)
 }
 
 // Server represents application server.
@@ -96,6 +113,23 @@ func (s *Server) AuthMiddleware(next http.Handler) http.Handler {
 		ctx := appcontext.ContextWithUserID(r.Context(), claimsUserID)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+// LoggingMiddleware logs http requests details like URI, method and time taken to complete the request.
+func (s *Server) LoggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		ctx := logger.AddToContext(r.Context(), logger.GetCtxLogger())
+
+		recorder := &StatusRecorder{
+			ResponseWriter: w,
+			StatusCode:     DefaultStatusCode,
+		}
+
+		next.ServeHTTP(recorder, r.WithContext(ctx))
+
+		logger.CompleteRequest(ctx, r, time.Since(start), recorder.StatusCode)
 	})
 }
 
