@@ -59,18 +59,6 @@ type DownloadResponse struct {
 	ImageURL string `json:"image_url"`
 }
 
-// StatusRecorder logs http requests.
-type StatusRecorder struct {
-	http.ResponseWriter
-	StatusCode int
-}
-
-// WriteHeader saves status code.
-func (r *StatusRecorder) WriteHeader(statusCode int) {
-	r.StatusCode = statusCode
-	r.ResponseWriter.WriteHeader(statusCode)
-}
-
 // Server represents application server.
 type Server struct {
 	repo         *repository.Repository
@@ -120,11 +108,23 @@ func (s *Server) AuthMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// LoggingMiddleware logs http requests details like URI, method and time taken to complete the request.
+// StatusRecorder contains a writer for storing the requests status code.
+type StatusRecorder struct {
+	http.ResponseWriter
+	StatusCode int
+}
+
+// WriteHeader saves requests status code.
+func (sr *StatusRecorder) WriteHeader(statusCode int) {
+	sr.StatusCode = statusCode
+	sr.ResponseWriter.WriteHeader(statusCode)
+}
+
+// LoggingMiddleware logs http requests after they are executed.
 func (s *Server) LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		ctx := logger.AddToContext(r.Context(), logger.GetCtxLogger())
+		ctx := logger.AddToContext(r.Context())
 
 		recorder := &StatusRecorder{
 			ResponseWriter: w,

@@ -1,8 +1,10 @@
+// Package logger provides a logging system.
 package logger
 
 import (
 	"context"
 	"net/http"
+	"os"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -14,6 +16,7 @@ const (
 )
 
 var ctxLogger = &log.Logger{
+	Out: os.Stdout,
 	Formatter: &log.TextFormatter{
 		DisableColors:   false,
 		TimestampFormat: DefaultTimestampFormat,
@@ -22,21 +25,20 @@ var ctxLogger = &log.Logger{
 	Level: log.InfoLevel,
 }
 
-func GetCtxLogger() *log.Logger {
-	return ctxLogger
+// AddToContext adds a ctxLogger to the given context.
+func AddToContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, loggerKey, ctxLogger)
 }
 
-func AddToContext(ctx context.Context, l *log.Logger) context.Context {
-	return context.WithValue(ctx, loggerKey, l)
-}
-
+// GetFormContext returns the logger from the given context.
 func GetFormContext(ctx context.Context) *log.Logger {
-	if l, ok := ctx.Value(loggerKey).(*log.Logger); ok && l != nil {
-		return l
+	if logger, ok := ctx.Value(loggerKey).(*log.Logger); ok && logger != nil {
+		return logger
 	}
 	return ctxLogger
 }
 
+// CompleteRequest logs http requests details like URI, method, status code and duration.
 func CompleteRequest(ctx context.Context, r *http.Request, duration time.Duration, statusCode int) {
 	GetFormContext(ctx).WithFields(log.Fields{
 		"uri":      r.RequestURI,
