@@ -9,16 +9,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Konstantsiy/image-converter/internal/logger"
+	"github.com/Konstantsiy/image-converter/pkg/jwt"
+
+	"github.com/Konstantsiy/image-converter/pkg/logger"
 
 	"github.com/Konstantsiy/image-converter/internal/storage"
 
 	"github.com/Konstantsiy/image-converter/internal/appcontext"
-	"github.com/Konstantsiy/image-converter/internal/auth"
 	"github.com/Konstantsiy/image-converter/internal/converter"
-	"github.com/Konstantsiy/image-converter/internal/hash"
 	"github.com/Konstantsiy/image-converter/internal/repository"
 	"github.com/Konstantsiy/image-converter/internal/validation"
+	"github.com/Konstantsiy/image-converter/pkg/hash"
 	"github.com/gorilla/mux"
 )
 
@@ -62,12 +63,12 @@ type DownloadResponse struct {
 // Server represents application server.
 type Server struct {
 	repo         *repository.Repository
-	tokenManager *auth.TokenManager
+	tokenManager *jwt.TokenManager
 	storage      *storage.Storage
 }
 
 // NewServer creates new application server.
-func NewServer(repo *repository.Repository, tokenManager *auth.TokenManager, storage *storage.Storage) *Server {
+func NewServer(repo *repository.Repository, tokenManager *jwt.TokenManager, storage *storage.Storage) *Server {
 	return &Server{
 		repo:         repo,
 		tokenManager: tokenManager,

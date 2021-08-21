@@ -1,5 +1,5 @@
 // Package auth provides the logic for working with JWT tokens.
-package auth
+package jwt
 
 import (
 	"fmt"
