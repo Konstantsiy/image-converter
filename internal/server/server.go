@@ -9,17 +9,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Konstantsiy/image-converter/pkg/jwt"
-
-	"github.com/Konstantsiy/image-converter/pkg/logger"
-
-	"github.com/Konstantsiy/image-converter/internal/storage"
-
 	"github.com/Konstantsiy/image-converter/internal/appcontext"
 	"github.com/Konstantsiy/image-converter/internal/converter"
 	"github.com/Konstantsiy/image-converter/internal/repository"
+	"github.com/Konstantsiy/image-converter/internal/storage"
 	"github.com/Konstantsiy/image-converter/internal/validation"
 	"github.com/Konstantsiy/image-converter/pkg/hash"
+	"github.com/Konstantsiy/image-converter/pkg/jwt"
+	"github.com/Konstantsiy/image-converter/pkg/logger"
 	"github.com/gorilla/mux"
 )
 
@@ -50,12 +47,12 @@ type LoginResponse struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
-//SignUpResponse represents user id from sign up response.
+// SignUpResponse represents user id from sign up response.
 type SignUpResponse struct {
 	UserID string `json:"user_id"`
 }
 
-//DownloadResponse represents downloaded image URL.
+// DownloadResponse represents downloaded image URL.
 type DownloadResponse struct {
 	ImageURL string `json:"image_url"`
 }
