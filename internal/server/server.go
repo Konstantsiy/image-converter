@@ -214,7 +214,6 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// get (io.ReadSeeker, error) for AWS bucket
 	_, err = converter.Convert(file, targetFormat, ratio)
 	if err != nil {
 		http.Error(w, "can't convert image:"+err.Error(), http.StatusInternalServerError)
@@ -227,11 +226,14 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 // DownloadImage allows you to download original/converted image by id.
 func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	imageID := vars["id"]
+	id := vars["id"]
 
-	err := s.repo.ImageExists(imageID)
-	if err != nil {
+	imageID, err := s.repo.GetImageIDInStore(id)
+	if err == repository.ErrNoSuchImage {
 		http.Error(w, err.Error(), http.StatusNotFound)
+	}
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 

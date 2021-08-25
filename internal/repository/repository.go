@@ -87,20 +87,20 @@ func (r *Repository) InsertImage(filename, format string) error {
 	return nil
 }
 
-// ImageExists checks the presence of an image in the database by given id.
-func (r *Repository) ImageExists(imageID string) error {
-	var exists bool
-	const query = "select exists (select name from converter.images where id=$1);"
+// GetImageIDInStore returns the image id to the storage.
+func (r *Repository) GetImageIDInStore(id string) (string, error) {
+	var imageID string
+	const query = "select id form converter.images where id=$1;"
 
-	err := r.db.QueryRow(query, imageID).Scan(&exists)
+	err := r.db.QueryRow(query, id).Scan(&imageID)
 	if err == sql.ErrNoRows {
-		return ErrNoSuchImage
+		return "", ErrNoSuchImage
 	}
 	if err != nil {
-		return fmt.Errorf("error in image checking: %v", err)
+		return "", fmt.Errorf("error in the image selection: %v", err)
 	}
 
-	return nil
+	return imageID, nil
 }
 
 // GetUserByEmail gets the information about the user by given email.
