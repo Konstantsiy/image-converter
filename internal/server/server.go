@@ -12,7 +12,6 @@ import (
 
 	"github.com/Konstantsiy/image-converter/internal/appcontext"
 	"github.com/Konstantsiy/image-converter/internal/auth"
-	"github.com/Konstantsiy/image-converter/internal/converter"
 	"github.com/Konstantsiy/image-converter/internal/hash"
 	"github.com/Konstantsiy/image-converter/internal/repository"
 	"github.com/Konstantsiy/image-converter/internal/validation"
@@ -214,13 +213,7 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = converter.Convert(file, targetFormat, ratio)
-	if err != nil {
-		http.Error(w, "can't convert image:"+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// ... next PRs
+	// next PR
 }
 
 // DownloadImage allows you to download original/converted image by id.
@@ -248,7 +241,11 @@ func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
 
 // GetRequestsHistory displays the user's request history.
 func (s *Server) GetRequestsHistory(w http.ResponseWriter, r *http.Request) {
-	userID := appcontext.UserIDFromContext(r.Context())
+	userID, ok := appcontext.GetUserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "can't get user id form application context", http.StatusInternalServerError)
+		return
+	}
 
 	requestsHistory, err := s.repo.GetRequestsByUserID(userID)
 	if err != nil {

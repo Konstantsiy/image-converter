@@ -83,7 +83,7 @@ func (s *Storage) UploadFile(file io.ReadSeeker, fileID string) error {
 		ACL:    aws.String(s3.BucketCannedACLPublicRead),
 	})
 	if err != nil {
-		return fmt.Errorf("can't upload file to storage: %v", err)
+		return fmt.Errorf("can't upload file: %v", err)
 	}
 
 	return nil

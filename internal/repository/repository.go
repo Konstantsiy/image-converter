@@ -19,14 +19,6 @@ var (
 
 const uniqueViolationCode = "23505"
 
-// Image represents an image in the database.
-type Image struct {
-	ID       string
-	Name     string
-	Format   string
-	Location string
-}
-
 // User represents the user in the database.
 type User struct {
 	ID       string
@@ -75,16 +67,16 @@ func (r *Repository) InsertUser(email, password string) (string, error) {
 }
 
 // InsertImage inserts the image into images table and returns image id.
-func (r *Repository) InsertImage(filename, format string) error {
+func (r *Repository) InsertImage(filename, format string) (string, error) {
 	var imageID string
 	const query = "insert into converter.images (name, format) values ($1, $2) returning id;"
 
 	err := r.db.QueryRow(query, filename, format).Scan(&imageID)
 	if err != nil {
-		return fmt.Errorf("can't insert image: %w", err)
+		return "", fmt.Errorf("can't insert image: %w", err)
 	}
 
-	return nil
+	return imageID, nil
 }
 
 // GetImageIDInStore returns the image id to the storage.
@@ -159,47 +151,19 @@ func (r *Repository) GetRequestsByUserID(userID string) ([]ConversionRequest, er
 }
 
 // MakeRequest creates the conversion request and returns its id.
-func (r *Repository) MakeRequest(filename, userID, sourceFormat, targetFormat string, ratio int) (id string, resultErr error) {
-	tx, txErr := r.db.Begin()
-	if txErr != nil {
-		return "", fmt.Errorf("transaction start error: %v", txErr)
-	}
-	defer func() {
-		switch txErr {
-		case nil:
-			err := tx.Commit()
-			if err != nil {
-				resultErr = fmt.Errorf("transaction commit error: %v", err)
-			}
-		default:
-			err := tx.Rollback()
-			if err != nil {
-				resultErr = fmt.Errorf("transaction rollback error: %v", err)
-			}
-		}
-	}()
-
-	const (
-		insertImageQuery   = "insert into converter.images (name, format) values ($1, $2) returning id;"
-		insertRequestQuery = `insert into converter.requests 
+func (r *Repository) MakeRequest(userID, sourceID, sourceFormat, targetFormat string, ratio int) (string, error) {
+	var requestID string
+	const query = `insert into converter.requests 
 		(user_id, source_id, target_id, source_format, target_format, ratio, 'queued')
 		values ($1, $2, NULL, $3, $4, $5) 
 		returning id;`
-	)
 
-	var imageID string
-	txErr = tx.QueryRow(insertImageQuery, filename, sourceFormat).Scan(&imageID)
-	if txErr != nil {
-		return "", fmt.Errorf("can't insert image: %v", txErr)
+	err := r.db.QueryRow(query, userID, sourceID, sourceFormat, targetFormat, ratio).Scan(&requestID)
+	if err != nil {
+		return "", fmt.Errorf("can't make request: %v", err)
 	}
 
-	var requestID string
-	txErr = tx.QueryRow(insertRequestQuery, userID, imageID, sourceFormat, targetFormat, ratio).Scan(&requestID)
-	if txErr != nil {
-		return "", fmt.Errorf("can't make request: %v", txErr)
-	}
-
-	return requestID, txErr
+	return requestID, nil
 }
 
 // UpdateRequest updates the request status and the id of the target image.
