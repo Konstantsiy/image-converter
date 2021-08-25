@@ -122,7 +122,7 @@ func (sr *StatusRecorder) WriteHeader(statusCode int) {
 func (s *Server) LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		ctx := logger.AddToContext(r.Context())
+		ctx := logger.ContextWithLogger(r.Context())
 
 		recorder := &StatusRecorder{
 			ResponseWriter: w,
@@ -279,7 +279,11 @@ func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
 
 // GetRequestsHistory displays the user's request history.
 func (s *Server) GetRequestsHistory(w http.ResponseWriter, r *http.Request) {
-	userID := appcontext.UserIDFromContext(r.Context())
+	userID, ok := appcontext.UserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "can't get user id from application context", http.StatusInternalServerError)
+		return
+	}
 
 	requestsHistory, err := s.repo.GetRequestsByUserID(userID)
 	if err != nil {
