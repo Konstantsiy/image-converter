@@ -12,7 +12,8 @@ func ContextWithUserID(ctx context.Context, userID string) context.Context {
 	return context.WithValue(ctx, userIDKey, userID)
 }
 
-//UserIDFromContext gets user id from application context.
-func UserIDFromContext(ctx context.Context) string {
-	return ctx.Value(userIDKey).(string)
+//GetUserIDFromContext gets user id from application context.
+func GetUserIDFromContext(ctx context.Context) (string, bool) {
+	userID, ok := ctx.Value(userIDKey).(string)
+	return userID, ok
 }
