@@ -57,8 +57,3 @@ func Info(ctx context.Context, msg string) {
 func Error(ctx context.Context, err error) {
 	GetFormContext(ctx).Errorln(err)
 }
-
-// Fatal logs errors at Fatal level.
-func Fatal(ctx context.Context, err error) {
-	GetFormContext(ctx).Fatalln(err)
-}
