@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	loggerKey              = 2
+	loggerKey              = 1
 	DefaultTimestampFormat = "2006-01-02 15:04:05"
 )
 
@@ -25,13 +25,13 @@ var ctxLogger = &log.Logger{
 	Level: log.InfoLevel,
 }
 
-// AddToContext adds a ctxLogger to the given context.
-func AddToContext(ctx context.Context) context.Context {
+// ContextWithLogger adds a ctxLogger to the given context.
+func ContextWithLogger(ctx context.Context) context.Context {
 	return context.WithValue(ctx, loggerKey, ctxLogger)
 }
 
-// GetFormContext returns the logger from the given context.
-func GetFormContext(ctx context.Context) *log.Logger {
+// LoggerFromContext returns the logger from the given context.
+func LoggerFromContext(ctx context.Context) *log.Logger {
 	if logger, ok := ctx.Value(loggerKey).(*log.Logger); ok && logger != nil {
 		return logger
 	}
@@ -40,7 +40,7 @@ func GetFormContext(ctx context.Context) *log.Logger {
 
 // CompleteRequest logs http requests details like URI, method, status code and duration.
 func CompleteRequest(ctx context.Context, r *http.Request, duration time.Duration, statusCode int) {
-	GetFormContext(ctx).WithFields(log.Fields{
+	LoggerFromContext(ctx).WithFields(log.Fields{
 		"uri":      r.RequestURI,
 		"method":   r.Method,
 		"duration": duration,
@@ -50,10 +50,10 @@ func CompleteRequest(ctx context.Context, r *http.Request, duration time.Duratio
 
 // Info logs message at Info level.
 func Info(ctx context.Context, msg string) {
-	GetFormContext(ctx).Infoln(msg)
+	LoggerFromContext(ctx).Infoln(msg)
 }
 
 // Error logs errors at Error level.
 func Error(ctx context.Context, err error) {
-	GetFormContext(ctx).Errorln(err)
+	LoggerFromContext(ctx).Errorln(err)
 }
