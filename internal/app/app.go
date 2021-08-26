@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Konstantsiy/image-converter/internal/auth"
 	"github.com/Konstantsiy/image-converter/internal/config"
 	"github.com/Konstantsiy/image-converter/internal/repository"
 	"github.com/Konstantsiy/image-converter/internal/server"
 	"github.com/Konstantsiy/image-converter/internal/storage"
+	"github.com/Konstantsiy/image-converter/pkg/jwt"
 	"github.com/gorilla/mux"
 )
 
