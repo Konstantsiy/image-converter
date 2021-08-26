@@ -29,7 +29,7 @@ func Start() error {
 	defer db.Close()
 
 	repo := repository.NewRepository(db)
-	tokenManager := auth.NewTokenManager(conf.PublicKey, conf.PrivateKey)
+	tokenManager := jwt.NewTokenManager(conf.PublicKey, conf.PrivateKey)
 
 	st, err := storage.NewStorage(storage.S3Config{
 		Region:          conf.Region,

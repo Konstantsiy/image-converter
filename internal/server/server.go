@@ -11,8 +11,6 @@ import (
 	"time"
 
 	"github.com/Konstantsiy/image-converter/internal/appcontext"
-	"github.com/Konstantsiy/image-converter/internal/auth"
-	"github.com/Konstantsiy/image-converter/internal/hash"
 	"github.com/Konstantsiy/image-converter/internal/repository"
 	"github.com/Konstantsiy/image-converter/internal/storage"
 	"github.com/Konstantsiy/image-converter/internal/validation"
