@@ -60,7 +60,7 @@ func (r *Repository) InsertUser(email, password string) (string, error) {
 		return "", ErrUserAlreadyExists
 	}
 	if err != nil {
-		return "", fmt.Errorf("can't insert user: %v", err)
+		return "", fmt.Errorf("can't insert user: %w", err)
 	}
 
 	return userID, nil
@@ -89,7 +89,7 @@ func (r *Repository) GetImageIDInStore(id string) (string, error) {
 		return "", ErrNoSuchImage
 	}
 	if err != nil {
-		return "", fmt.Errorf("error in the image selection: %v", err)
+		return "", fmt.Errorf("error in the image selection: %w", err)
 	}
 
 	return imageID, nil
@@ -105,7 +105,7 @@ func (r *Repository) GetUserByEmail(email string) (User, error) {
 		return User{}, ErrNoSuchUser
 	}
 	if err != nil {
-		return User{}, fmt.Errorf("error in the user selection: %v", err)
+		return User{}, fmt.Errorf("error in the user selection: %w", err)
 	}
 
 	return user, nil
@@ -120,7 +120,7 @@ func (r *Repository) GetRequestsByUserID(userID string) ([]ConversionRequest, er
 
 	rows, err := r.db.Query(query, userID)
 	if err != nil {
-		return nil, fmt.Errorf("can't get user requests: %v", err)
+		return nil, fmt.Errorf("can't get user requests: %w", err)
 	}
 	defer rows.Close()
 
@@ -138,13 +138,13 @@ func (r *Repository) GetRequestsByUserID(userID string) ([]ConversionRequest, er
 			request.Created,
 			request.Updated)
 		if err != nil {
-			return nil, fmt.Errorf("can't scan user request from rows: %v", err)
+			return nil, fmt.Errorf("can't scan user request from rows: %w", err)
 		}
 		requests = append(requests, request)
 	}
 
 	if err = rows.Err(); err != nil {
-		return requests, fmt.Errorf("error selecting rows: %v", err)
+		return requests, fmt.Errorf("error selecting rows: %w", err)
 	}
 
 	return requests, nil
@@ -160,7 +160,7 @@ func (r *Repository) MakeRequest(userID, sourceID, sourceFormat, targetFormat st
 
 	err := r.db.QueryRow(query, userID, sourceID, sourceFormat, targetFormat, ratio).Scan(&requestID)
 	if err != nil {
-		return "", fmt.Errorf("can't make request: %v", err)
+		return "", fmt.Errorf("can't make request: %w", err)
 	}
 
 	return requestID, nil
@@ -176,12 +176,12 @@ func (r *Repository) UpdateRequest(requestID, status, targetID string) error {
 	const query = "update converter.requests set target_id=$2, status=$3, updated=default where id=$1;"
 	res, err := r.db.Exec(query, requestID, sqlTargetID, status)
 	if err != nil {
-		return fmt.Errorf("can't update request: %v", err)
+		return fmt.Errorf("can't update request: %w", err)
 	}
 
 	count, err := res.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("can't get the number of rows affected by an update: %v", err)
+		return fmt.Errorf("can't get the number of rows affected by an update: %w", err)
 	}
 	if count == 0 {
 		return ErrNoSuchRequest
