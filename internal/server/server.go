@@ -7,21 +7,24 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-
-	"github.com/Konstantsiy/image-converter/internal/storage"
+	"time"
 
 	"github.com/Konstantsiy/image-converter/internal/appcontext"
-	"github.com/Konstantsiy/image-converter/internal/auth"
 	"github.com/Konstantsiy/image-converter/internal/converter"
-	"github.com/Konstantsiy/image-converter/internal/hash"
 	"github.com/Konstantsiy/image-converter/internal/repository"
+	"github.com/Konstantsiy/image-converter/internal/storage"
 	"github.com/Konstantsiy/image-converter/internal/validation"
+	"github.com/Konstantsiy/image-converter/pkg/hash"
+	"github.com/Konstantsiy/image-converter/pkg/jwt"
+	"github.com/Konstantsiy/image-converter/pkg/logger"
 	"github.com/gorilla/mux"
 )
 
 const (
 	AuthorizationHeader  = "Authorization"
 	NeededSecurityScheme = "Bearer"
+
+	DefaultStatusCode = 200
 )
 
 // AuthRequest represents the user's authorization request.
@@ -44,12 +47,12 @@ type LoginResponse struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
-//SignUpResponse represents user id from sign up response.
+// SignUpResponse represents user id from sign up response.
 type SignUpResponse struct {
 	UserID string `json:"user_id"`
 }
 
-//DownloadResponse represents downloaded image URL.
+// DownloadResponse represents downloaded image URL.
 type DownloadResponse struct {
 	ImageURL string `json:"image_url"`
 }
@@ -57,12 +60,12 @@ type DownloadResponse struct {
 // Server represents application server.
 type Server struct {
 	repo         *repository.Repository
-	tokenManager *auth.TokenManager
+	tokenManager *jwt.TokenManager
 	storage      *storage.Storage
 }
 
 // NewServer creates new application server.
-func NewServer(repo *repository.Repository, tokenManager *auth.TokenManager, storage *storage.Storage) *Server {
+func NewServer(repo *repository.Repository, tokenManager *jwt.TokenManager, storage *storage.Storage) *Server {
 	return &Server{
 		repo:         repo,
 		tokenManager: tokenManager,
@@ -100,6 +103,35 @@ func (s *Server) AuthMiddleware(next http.Handler) http.Handler {
 		ctx := appcontext.ContextWithUserID(r.Context(), claimsUserID)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+// StatusRecorder contains a writer for storing the requests status code.
+type StatusRecorder struct {
+	http.ResponseWriter
+	StatusCode int
+}
+
+// WriteHeader saves requests status code.
+func (sr *StatusRecorder) WriteHeader(statusCode int) {
+	sr.StatusCode = statusCode
+	sr.ResponseWriter.WriteHeader(statusCode)
+}
+
+// LoggingMiddleware logs http requests after they are executed.
+func (s *Server) LoggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		ctx := logger.ContextWithLogger(r.Context())
+
+		recorder := &StatusRecorder{
+			ResponseWriter: w,
+			StatusCode:     DefaultStatusCode,
+		}
+
+		next.ServeHTTP(recorder, r.WithContext(ctx))
+
+		logger.CompleteRequest(ctx, r, time.Since(start), recorder.StatusCode)
 	})
 }
 
@@ -247,7 +279,11 @@ func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
 
 // GetRequestsHistory displays the user's request history.
 func (s *Server) GetRequestsHistory(w http.ResponseWriter, r *http.Request) {
-	userID := appcontext.UserIDFromContext(r.Context())
+	userID, ok := appcontext.UserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "can't get user id from application context", http.StatusInternalServerError)
+		return
+	}
 
 	requestsHistory, err := s.repo.GetRequestsByUserID(userID)
 	if err != nil {
