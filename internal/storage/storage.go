@@ -69,7 +69,7 @@ func createSession(s3conf S3Config) (*session.Session, error) {
 		Credentials: credentials.NewStaticCredentials(s3conf.AccessKeyID, s3conf.SecretAccessKey, ""),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("can't create session, %v", err)
+		return nil, fmt.Errorf("can't create session, %w", err)
 	}
 	return s3session, nil
 }
@@ -83,7 +83,7 @@ func (s *Storage) UploadFile(file io.ReadSeeker, fileID string) error {
 		ACL:    aws.String(s3.BucketCannedACLPublicRead),
 	})
 	if err != nil {
-		return fmt.Errorf("can't upload file: %v", err)
+		return fmt.Errorf("can't upload file: %w", err)
 	}
 
 	return nil
@@ -98,7 +98,7 @@ func (s *Storage) GetDownloadURL(fileID string) (string, error) {
 
 	url, err := req.Presign(URLTimeout)
 	if err != nil {
-		return "", fmt.Errorf("can't create requets's presigned URL, %v", err)
+		return "", fmt.Errorf("can't create requets's presigned URL, %w", err)
 	}
 
 	return url, err

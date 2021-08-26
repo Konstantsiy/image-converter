@@ -255,7 +255,7 @@ func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 
 	imageID, err := s.repo.GetImageIDInStore(id)
-	if err == repository.ErrNoSuchImage || errors.Unwrap(err) == repository.ErrNoSuchImage {
+	if err == repository.ErrNoSuchImage || errors.Is(err, repository.ErrNoSuchImage) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
