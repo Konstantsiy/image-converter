@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Konstantsiy/image-converter/internal/converter"
+
 	"github.com/Konstantsiy/image-converter/internal/appcontext"
 	"github.com/Konstantsiy/image-converter/internal/repository"
 	"github.com/Konstantsiy/image-converter/internal/storage"
@@ -225,12 +227,12 @@ func (s *Server) SignUp(w http.ResponseWriter, r *http.Request) {
 
 // ConvertImage converts needed image according to the request.
 func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
-	file, header, err := r.FormFile("file")
+	sourceFile, header, err := r.FormFile("file")
 	if err != nil {
-		http.Error(w, "can't get file from form", http.StatusBadRequest)
+		http.Error(w, "can't get sourceFile from form", http.StatusBadRequest)
 		return
 	}
-	defer file.Close()
+	defer sourceFile.Close()
 
 	sourceFormat := r.FormValue("sourceFormat")
 	targetFormat := r.FormValue("targetFormat")
@@ -246,7 +248,69 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// next PR
+	userID, ok := appcontext.UserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "can't get user id from application context", http.StatusInternalServerError)
+		return
+	}
+
+	sourceFileID, err := s.repo.InsertImage(filename, sourceFormat)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("repository error: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	targetFileID, err := s.repo.InsertImage(filename, targetFormat)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("repository error: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	requestID, err := s.repo.MakeRequest(userID, sourceFileID, sourceFormat, targetFormat, ratio)
+	requestCompletion := false
+	defer func() {
+		if !requestCompletion {
+			uErr := s.repo.UpdateRequest(requestID, repository.RequestStatusFailed, "")
+			if uErr != nil {
+				http.Error(w, fmt.Sprintf("can't update request with id %s: %v", requestID, uErr), http.StatusInternalServerError)
+			}
+		}
+	}()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("repository error: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	err = s.repo.UpdateRequest(requestID, repository.RequestStatusProcessed, "")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("can't update request: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	targetFile, err := converter.Convert(sourceFile, targetFormat, ratio)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("converter error: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	err = s.storage.UploadFile(sourceFile, sourceFileID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("storage error: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	err = s.storage.UploadFile(targetFile, targetFileID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("storage error: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	err = s.repo.UpdateRequest(requestID, repository.RequestStatusDone, targetFileID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("request updating error: %v", err), http.StatusInternalServerError)
+		requestCompletion = true
+		return
+	}
 }
 
 // DownloadImage allows you to download original/converted image by id.
@@ -255,7 +319,7 @@ func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 
 	imageID, err := s.repo.GetImageIDInStore(id)
-	if err == repository.ErrNoSuchImage || errors.Is(err, repository.ErrNoSuchImage) {
+	if errors.Is(err, repository.ErrNoSuchImage) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
