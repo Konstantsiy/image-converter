@@ -308,9 +308,10 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 	err = s.repo.UpdateRequest(requestID, repository.RequestStatusDone, targetFileID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("request updating error: %v", err), http.StatusInternalServerError)
-		requestCompletion = true
 		return
 	}
+
+	requestCompletion = true
 }
 
 // DownloadImage allows you to download original/converted image by id.
