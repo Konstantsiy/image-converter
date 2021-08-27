@@ -22,7 +22,13 @@ func Start() error {
 		return err
 	}
 
-	repo := repository.NewRepository()
+	db, err := repository.NewPostgresDB(&conf)
+	if err != nil {
+		return fmt.Errorf("can't connect to postgres database: %v", err)
+	}
+	defer db.Close()
+
+	repo := repository.NewRepository(db)
 	tokenManager := jwt.NewTokenManager(conf.PublicKey, conf.PrivateKey)
 
 	st, err := storage.NewStorage(storage.S3Config{

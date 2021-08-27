@@ -3,6 +3,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,7 +11,6 @@ import (
 	"time"
 
 	"github.com/Konstantsiy/image-converter/internal/appcontext"
-	"github.com/Konstantsiy/image-converter/internal/converter"
 	"github.com/Konstantsiy/image-converter/internal/repository"
 	"github.com/Konstantsiy/image-converter/internal/storage"
 	"github.com/Konstantsiy/image-converter/internal/validation"
@@ -246,24 +246,17 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// get (io.ReadSeeker, error) for AWS bucket
-	_, err = converter.Convert(file, targetFormat, ratio)
-	if err != nil {
-		http.Error(w, "can't convert image:"+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// ... next PRs
+	// next PR
 }
 
 // DownloadImage allows you to download original/converted image by id.
 func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	imageID := vars["id"]
+	id := vars["id"]
 
-	image, err := s.repo.GetImageByID(imageID)
-	if err == repository.ErrNoSuchImage {
-		http.Error(w, "can't get image info: "+err.Error(), http.StatusNotFound)
+	imageID, err := s.repo.GetImageIDInStore(id)
+	if err == repository.ErrNoSuchImage || errors.Is(err, repository.ErrNoSuchImage) {
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 	if err != nil {
@@ -271,10 +264,13 @@ func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// get image downloaded URL from storage by image.Location
-	url := "http(s)://s3.amazonaws.com/" + image.Location + "/file_name.extension"
+	url, err := s.storage.GetDownloadURL(imageID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	fmt.Fprint(w, &DownloadResponse{ImageURL: url})
+	fmt.Fprint(w, url)
 }
 
 // GetRequestsHistory displays the user's request history.
