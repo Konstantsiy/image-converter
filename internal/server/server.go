@@ -217,7 +217,7 @@ func (s *Server) SignUp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID, err := s.repo.InsertUser(request.Email, hashPwd)
-	if err == repository.ErrUserAlreadyExists {
+	if errors.Is(err, repository.ErrUserAlreadyExists) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -285,15 +285,15 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = s.repo.UpdateRequest(requestID, repository.RequestStatusProcessed, "")
-	if err != nil {
-		http.Error(w, fmt.Sprintf("can't update request: %v", err), http.StatusInternalServerError)
-		return
-	}
-
 	targetFile, err := converter.Convert(sourceFile, targetFormat, ratio)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("converter error: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	err = s.repo.UpdateRequest(requestID, repository.RequestStatusProcessed, "")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("can't update request: %v", err), http.StatusInternalServerError)
 		return
 	}
 
