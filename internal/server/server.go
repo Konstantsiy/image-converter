@@ -35,8 +35,8 @@ type AuthRequest struct {
 	Password string
 }
 
-// ConversionRequest represents an image conversion request.
-type ConversionRequest struct {
+// ConvertRequest represents an image conversion request.
+type ConvertRequest struct {
 	File         string
 	SourceFormat string
 	TargetFormat string
@@ -57,6 +57,10 @@ type SignUpResponse struct {
 // DownloadResponse represents downloaded image URL.
 type DownloadResponse struct {
 	ImageURL string `json:"image_url"`
+}
+
+type ConvertResponse struct {
+	RequestID string `json:"request_id"`
 }
 
 // Server represents application server.
@@ -312,6 +316,7 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	requestCompletion = true
+	fmt.Fprint(w, &ConvertResponse{RequestID: requestID})
 }
 
 // DownloadImage allows you to download original/converted image by id.
