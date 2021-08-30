@@ -43,6 +43,11 @@ type ConvertRequest struct {
 	Ratio        int
 }
 
+// ConvertResponse represents an image conversion response.
+type ConvertResponse struct {
+	RequestID string `json:"request_id"`
+}
+
 // LoginResponse represents token for authorization response.
 type LoginResponse struct {
 	AccessToken  string `json:"access_token"`
@@ -57,10 +62,6 @@ type SignUpResponse struct {
 // DownloadResponse represents downloaded image URL.
 type DownloadResponse struct {
 	ImageURL string `json:"image_url"`
-}
-
-type ConvertResponse struct {
-	RequestID string `json:"request_id"`
 }
 
 // Server represents application server.
@@ -340,7 +341,7 @@ func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprint(w, url)
+	fmt.Fprint(w, &DownloadResponse{ImageURL: url})
 }
 
 // GetRequestsHistory displays the user's request history.
