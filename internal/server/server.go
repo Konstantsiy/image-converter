@@ -265,42 +265,41 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	targetFileID, err := s.repo.InsertImage(filename, targetFormat)
+	err = s.storage.UploadFile(sourceFile, sourceFileID)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("repository error: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("storage error: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	requestID, err := s.repo.MakeRequest(userID, sourceFileID, sourceFormat, targetFormat, ratio)
-	requestCompletion := false
-	defer func() {
-		if !requestCompletion {
-			uErr := s.repo.UpdateRequest(requestID, repository.RequestStatusFailed, "")
-			if uErr != nil {
-				http.Error(w, fmt.Sprintf("can't update request with id %s: %v", requestID, uErr), http.StatusInternalServerError)
-			}
-		}
-	}()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("repository error: %v", err), http.StatusInternalServerError)
 		return
 	}
 
+	fmt.Fprint(w, ConvertResponse{RequestID: requestID}, http.StatusProcessing)
+
+	uErr := s.repo.UpdateRequest(requestID, repository.RequestStatusProcessing, "")
+	if uErr != nil {
+		http.Error(w, fmt.Sprintf("can't update request with id %s: %v", requestID, uErr), http.StatusInternalServerError)
+		return
+	}
+
+	// -----------------------------------------
+
 	targetFile, err := converter.Convert(sourceFile, targetFormat, ratio)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("converter error: %v", err), http.StatusInternalServerError)
+		uErr := s.repo.UpdateRequest(requestID, repository.RequestStatusFailed, "")
+		if uErr != nil {
+			http.Error(w, fmt.Sprintf("can't update request with id %s: %v", requestID, uErr), http.StatusInternalServerError)
+		}
 		return
 	}
 
-	err = s.repo.UpdateRequest(requestID, repository.RequestStatusProcessed, "")
+	targetFileID, err := s.repo.InsertImage(filename, targetFormat)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("can't update request: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	err = s.storage.UploadFile(sourceFile, sourceFileID)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("storage error: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("repository error: %v", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -315,9 +314,6 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("request updating error: %v", err), http.StatusInternalServerError)
 		return
 	}
-
-	requestCompletion = true
-	fmt.Fprint(w, &ConvertResponse{RequestID: requestID})
 }
 
 // DownloadImage allows you to download original/converted image by id.

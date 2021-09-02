@@ -20,9 +20,9 @@ var (
 const (
 	uniqueViolationCode = "23505"
 
-	RequestStatusProcessed = "processed"
-	RequestStatusFailed    = "failed"
-	RequestStatusDone      = "done"
+	RequestStatusProcessing = "processing"
+	RequestStatusFailed     = "failed"
+	RequestStatusDone       = "done"
 )
 
 // User represents the user in the database.
