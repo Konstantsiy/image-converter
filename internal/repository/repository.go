@@ -17,7 +17,13 @@ var (
 	ErrNoSuchRequest     = errors.New("request with the given id does not exists")
 )
 
-const uniqueViolationCode = "23505"
+const (
+	uniqueViolationCode = "23505"
+
+	RequestStatusProcessing = "processing"
+	RequestStatusFailed     = "failed"
+	RequestStatusDone       = "done"
+)
 
 // User represents the user in the database.
 type User struct {
