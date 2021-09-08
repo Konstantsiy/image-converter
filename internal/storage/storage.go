@@ -2,8 +2,10 @@
 package storage
 
 import (
+	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -87,6 +89,24 @@ func (s *Storage) UploadFile(file io.ReadSeeker, fileID string) error {
 	}
 
 	return nil
+}
+
+// DownloadFile downloads a file from the storage by the given id.
+func (s *Storage) DownloadFile(fileID string) (io.ReadSeeker, error) {
+	resp, err := s.svc.GetObject(&s3.GetObjectInput{
+		Bucket: aws.String(s.s3conf.BucketName),
+		Key:    aws.String(fileID),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("can't download file with id %s: %w", fileID, err)
+	}
+
+	buf, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("can't serialize response body: %w", err)
+	}
+
+	return bytes.NewReader(buf), nil
 }
 
 // GetDownloadURL returns URL to download а file from the bucket by the given file id.
