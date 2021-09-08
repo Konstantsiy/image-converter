@@ -25,7 +25,7 @@ $$;
 do $$
     begin
         if not exists(select 1 from pg_type where typname = 'status') then
-            create type status as enum ('queued', 'processed', 'failed', 'done');
+            create type status as enum ('queued', 'processing', 'failed', 'done');
         end if;
     end
 $$;
