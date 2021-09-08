@@ -25,6 +25,9 @@ func TestLoad(t *testing.T) {
 	os.Setenv("AWS_SECRET_ACCESS_KEY", "SDFSDFDSFSF84378FDSFSDFSDFD")
 	os.Setenv("AWS_BUCKET_NAME", "name1234")
 
+	os.Setenv("RABBITMQ_QUEUE_NAME", "converter_queue")
+	os.Setenv("RABBITMQ_CONNECTION_URL", "amqp://guest:guest@localhost:5672/")
+
 	actual, err := Load()
 	require.NoError(err)
 
@@ -43,6 +46,9 @@ func TestLoad(t *testing.T) {
 		AccessKeyID:     "SGFHSGDHFSGF",
 		SecretAccessKey: "SDFSDFDSFSF84378FDSFSDFSDFD",
 		BucketName:      "name1234",
+
+		QueueName:         "converter_queue",
+		AMQPConnectionURL: "amqp://guest:guest@localhost:5672/",
 	}
 	require.Equal(expected, actual)
 }

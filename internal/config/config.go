@@ -21,6 +21,9 @@ type Config struct {
 	AccessKeyID     string `envconfig:"AWS_ACCESS_KEY_ID"`
 	SecretAccessKey string `envconfig:"AWS_SECRET_ACCESS_KEY"`
 	BucketName      string `envconfig:"AWS_BUCKET_NAME"`
+
+	QueueName         string `envconfig:"RABBITMQ_QUEUE_NAME"`
+	AMQPConnectionURL string `envconfig:"RABBITMQ_CONNECTION_URL"`
 }
 
 // Load loads the necessary configurations.
