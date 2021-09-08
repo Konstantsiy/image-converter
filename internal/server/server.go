@@ -5,14 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
-	"github.com/Konstantsiy/image-converter/internal/converter"
+	"github.com/Konstantsiy/image-converter/internal/queue"
 
 	"github.com/Konstantsiy/image-converter/internal/appcontext"
 	"github.com/Konstantsiy/image-converter/internal/repository"
@@ -71,14 +69,16 @@ type Server struct {
 	repo         *repository.Repository
 	tokenManager *jwt.TokenManager
 	storage      *storage.Storage
+	producer     *queue.Producer
 }
 
 // NewServer creates new application server.
-func NewServer(repo *repository.Repository, tokenManager *jwt.TokenManager, storage *storage.Storage) *Server {
+func NewServer(repo *repository.Repository, tokenManager *jwt.TokenManager, storage *storage.Storage, producer *queue.Producer) *Server {
 	return &Server{
 		repo:         repo,
 		tokenManager: tokenManager,
 		storage:      storage,
+		producer:     producer,
 	}
 }
 
@@ -279,59 +279,11 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	requestCompletion := false
 	fmt.Fprint(w, ConvertResponse{RequestID: requestID}, http.StatusProcessing)
 
-	defer func() {
-		if !requestCompletion {
-			uErr := s.repo.UpdateRequest(requestID, repository.RequestStatusFailed, "")
-			if uErr != nil {
-				http.Error(w, fmt.Sprintf("can't update request with id %s: %v", requestID, uErr), http.StatusInternalServerError)
-			}
-		}
-	}()
-
-	var (
-		targetFile io.ReadSeeker
-		wg         sync.WaitGroup
-		convErr    error
-	)
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		targetFile, convErr = converter.Convert(sourceFile, targetFormat, ratio)
-	}()
-
-	err = s.repo.UpdateRequest(requestID, repository.RequestStatusProcessing, "")
+	err = s.producer.SendToQueue(sourceFileID, filename, sourceFormat, targetFormat, requestID, ratio)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("can't update request with id %s: %v", requestID, err), http.StatusInternalServerError)
-		return
-	}
-
-	targetFileID, err := s.repo.InsertImage(filename, targetFormat)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("repository error: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	wg.Wait()
-	if convErr != nil {
-		http.Error(w, fmt.Sprintf("converter error: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	err = s.storage.UploadFile(targetFile, targetFileID)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("storage error: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	requestCompletion = true
-
-	err = s.repo.UpdateRequest(requestID, repository.RequestStatusDone, targetFileID)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("request updating error: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprint("can't send data to queue: %w", err), http.StatusInternalServerError)
 		return
 	}
 }
