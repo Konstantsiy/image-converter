@@ -8,6 +8,8 @@ import (
 	"github.com/streadway/amqp"
 )
 
+const MIMEContentType = "application/json"
+
 // Producer sends messages to the queue for further processing.
 type Producer struct {
 	client *rabbitMQClient
@@ -41,7 +43,7 @@ func (p *Producer) SendToQueue(fileID, filename, sourceFormat, targetFormat, req
 	err = p.client.ch.Publish("", p.client.queue.Name, false, false,
 		amqp.Publishing{
 			DeliveryMode: amqp.Persistent,
-			ContentType:  "application/json",
+			ContentType:  MIMEContentType,
 			Body:         body,
 		})
 	if err != nil {
