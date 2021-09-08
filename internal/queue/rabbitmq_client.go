@@ -7,6 +7,7 @@ import (
 	"github.com/streadway/amqp"
 )
 
+// queueMessage represents a message that is passed to the queue.
 type queueMessage struct {
 	FileID       string
 	Filename     string
@@ -16,12 +17,14 @@ type queueMessage struct {
 	Ratio        int
 }
 
+// rabbitMQClient provides connection to the queue via a specific channel.
 type rabbitMQClient struct {
 	conn  *amqp.Connection
 	ch    *amqp.Channel
 	queue *amqp.Queue
 }
 
+// initRabbitMQClient initializes the queue client.
 func initRabbitMQClient(conf *config.Config) (*rabbitMQClient, error) {
 	if conf.AMQPConnectionURL == "" || conf.QueueName == "" {
 		return nil, fmt.Errorf("RabbitMQ configurations should not be empty")

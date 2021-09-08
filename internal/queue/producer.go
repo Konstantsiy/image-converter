@@ -8,22 +8,22 @@ import (
 	"github.com/streadway/amqp"
 )
 
-// Publisher
-type Publisher struct {
+// Producer sends messages to the queue for further processing.
+type Producer struct {
 	client *rabbitMQClient
 }
 
-func NewPublisher(conf *config.Config) (*Publisher, error) {
+func NewProducer(conf *config.Config) (*Producer, error) {
 	client, err := initRabbitMQClient(conf)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Publisher{client: client}, nil
+	return &Producer{client: client}, nil
 }
 
 // SendToQueue sends messages to the queue.
-func (p *Publisher) SendToQueue(fileID, filename, sourceFormat, targetFormat, requestID string, ratio int) error {
+func (p *Producer) SendToQueue(fileID, filename, sourceFormat, targetFormat, requestID string, ratio int) error {
 	msg := queueMessage{
 		FileID:       fileID,
 		Filename:     filename,
