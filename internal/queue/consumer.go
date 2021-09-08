@@ -24,7 +24,6 @@ type Consumer struct {
 
 func NewConsumer(repo *repository.Repository, storage *storage.Storage, conf *config.Config) (*Consumer, error) {
 	client, err := initRabbitMQClient(conf)
-	logger.Info(context.Background(), "consumer client is init")
 	if err != nil {
 		return nil, err
 	}
@@ -38,14 +37,10 @@ func (c *Consumer) ListenToQueue() error {
 		return fmt.Errorf("can't configure QoS: %w", err)
 	}
 
-	logger.Info(context.Background(), "QoS is configured")
-
 	msgChannel, err := c.client.ch.Consume(c.client.queue.Name, "", false, false, false, false, nil)
 	if err != nil {
 		return fmt.Errorf("can't register channel: %w", err)
 	}
-
-	logger.Info(context.Background(), "queue channel is created")
 
 	go func() {
 		for {
@@ -70,8 +65,6 @@ func (c *Consumer) processQueueMessage(msg *amqp.Delivery) {
 	if err != nil {
 		logger.Error(context.Background(), err)
 	}
-
-	logger.Info(context.Background(), fmt.Sprintf("message: %+v", data))
 
 	requestCompletion := false
 	defer func() {
@@ -109,23 +102,17 @@ func (c *Consumer) processQueueMessage(msg *amqp.Delivery) {
 		return
 	}
 
-	logger.Info(context.Background(), "targetFile ---> repository")
-
 	err = c.storage.UploadFile(targetFile, targetFileID)
 	if err != nil {
 		logger.Error(context.Background(), fmt.Errorf("storage error: %w", err))
 		return
 	}
 
-	logger.Info(context.Background(), "targetFile ---> storage")
-
 	err = c.repo.UpdateRequest(data.RequestID, repository.RequestStatusDone, targetFileID)
 	if err != nil {
 		logger.Error(context.Background(), fmt.Errorf("request updating error: %w", err))
 		return
 	}
-
-	logger.Info(context.Background(), "request status updated to the Done")
 
 	requestCompletion = true
 }
