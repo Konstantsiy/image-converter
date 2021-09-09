@@ -279,7 +279,7 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprint(w, ConvertResponse{RequestID: requestID}, http.StatusProcessing)
+	fmt.Fprint(w, ConvertResponse{RequestID: requestID}, http.StatusAccepted)
 
 	err = s.producer.SendToQueue(sourceFileID, filename, sourceFormat, targetFormat, requestID, ratio)
 	if err != nil {
