@@ -61,7 +61,7 @@ func (c *Consumer) consumeFromQueue(msg *amqp.Delivery) {
 		return
 	}
 
-	err = c.inProcess(data)
+	err = c.process(data)
 	if err != nil {
 		logger.Error(context.Background(), fmt.Errorf("error processing a message from the queue: %w", err))
 		uErr := c.repo.UpdateRequest(data.RequestID, repository.RequestStatusFailed, "")
@@ -81,8 +81,8 @@ func (c *Consumer) consumeFromQueue(msg *amqp.Delivery) {
 	}
 }
 
-// inProcess processes the current message from the queue.
-func (c *Consumer) inProcess(data queueMessage) error {
+// process processes the current message from the queue.
+func (c *Consumer) process(data queueMessage) error {
 	sourceFile, err := c.storage.DownloadFile(data.FileID)
 	if err != nil {
 		return fmt.Errorf("storage error: %w", err)
