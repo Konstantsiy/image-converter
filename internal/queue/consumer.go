@@ -45,15 +45,15 @@ func (c *Consumer) ListenToQueue() error {
 	go func() {
 		for {
 			msg := <-msgChannel
-			go c.processQueueMessage(&msg)
+			go c.consumeFromQueue(&msg)
 		}
 	}()
 
 	return nil
 }
 
-// processQueueMessage processes the current message from the queue.
-func (c *Consumer) processQueueMessage(msg *amqp.Delivery) {
+// consumeFromQueue wraps the message processing and confirms its completion.
+func (c *Consumer) consumeFromQueue(msg *amqp.Delivery) {
 	var data queueMessage
 	err := json.NewDecoder(bytes.NewReader(msg.Body)).Decode(&data)
 	if err != nil {
@@ -61,58 +61,57 @@ func (c *Consumer) processQueueMessage(msg *amqp.Delivery) {
 		return
 	}
 
-	err = msg.Ack(false)
+	err = c.inProcess(data)
 	if err != nil {
-		logger.Error(context.Background(), err)
+		logger.Error(context.Background(), fmt.Errorf("error processing a message from the queue: %w", err))
+		uErr := c.repo.UpdateRequest(data.RequestID, repository.RequestStatusFailed, "")
+		if uErr != nil {
+			logger.Error(context.Background(), fmt.Errorf("can't update request with id %s: %w, (original error: %v)", data.RequestID, err, err))
+		}
+		nErr := msg.Nack(true, false)
+		if err != nil {
+			logger.Error(context.Background(), fmt.Errorf("can't make negative acknowledgement: %w, (original error: %v)", nErr, err))
+		}
+		return
 	}
 
-	requestCompletion := false
-	defer func() {
-		if !requestCompletion {
-			uErr := c.repo.UpdateRequest(data.RequestID, repository.RequestStatusFailed, "")
-			if uErr != nil {
-				logger.Error(context.Background(), fmt.Errorf("can't update request with id %s: %w", data.RequestID, err))
-			}
-		}
-	}()
+	err = msg.Ack(false)
+	if err != nil {
+		logger.Error(context.Background(), fmt.Errorf("can't make acknowledgement: %w", err))
+	}
+}
 
+// inProcess processes the current message from the queue.
+func (c *Consumer) inProcess(data queueMessage) error {
 	sourceFile, err := c.storage.DownloadFile(data.FileID)
 	if err != nil {
-		logger.Error(context.Background(), fmt.Errorf("storage error: %v", err))
-		return
+		return fmt.Errorf("storage error: %w", err)
 	}
 
 	targetFile, err := converter.Convert(sourceFile, data.TargetFormat, data.Ratio)
 	if err != nil {
-		logger.Error(context.Background(), fmt.Errorf("converter error: %w", err))
-		return
+		return fmt.Errorf("converter error: %w", err)
 	}
 
 	err = c.repo.UpdateRequest(data.RequestID, repository.RequestStatusProcessing, "")
 	if err != nil {
-		logger.Error(context.Background(), fmt.Errorf("can't update request with id %s: %w", data.RequestID, err))
-		return
+		return fmt.Errorf("can't update request with id %s: %w", data.RequestID, err)
 	}
-
-	logger.Info(context.Background(), "request status updated to the Processing")
 
 	targetFileID, err := c.repo.InsertImage(data.Filename, data.TargetFormat)
 	if err != nil {
-		logger.Error(context.Background(), fmt.Errorf("repository error: %w", err))
-		return
+		return fmt.Errorf("repository error: %w", err)
 	}
 
 	err = c.storage.UploadFile(targetFile, targetFileID)
 	if err != nil {
-		logger.Error(context.Background(), fmt.Errorf("storage error: %w", err))
-		return
+		return fmt.Errorf("storage error: %w", err)
 	}
 
 	err = c.repo.UpdateRequest(data.RequestID, repository.RequestStatusDone, targetFileID)
 	if err != nil {
-		logger.Error(context.Background(), fmt.Errorf("request updating error: %w", err))
-		return
+		return fmt.Errorf("request updating error: %w", err)
 	}
 
-	requestCompletion = true
+	return nil
 }
