@@ -30,55 +30,58 @@ func NewConsumer(repo *repository.Repository, storage *storage.Storage, conf *co
 	return &Consumer{repo: repo, storage: storage, client: client}, nil
 }
 
-// ListenToQueue listens to the queue channel in a separate goroutine.
-func (c *Consumer) ListenToQueue() error {
+// LaunchListener listens to the queue channel in a separate goroutine.
+func (c *Consumer) LaunchListener() {
 	err := c.client.ch.Qos(1, 0, false)
 	if err != nil {
-		return fmt.Errorf("can't configure QoS: %w", err)
+		logger.Error(context.Background(), fmt.Errorf("can't configure QoS: %w", err))
+		return
 	}
 
 	msgChannel, err := c.client.ch.Consume(c.client.queue.Name, "", false, false, false, false, nil)
 	if err != nil {
-		return fmt.Errorf("can't register channel: %w", err)
+		logger.Error(context.Background(), fmt.Errorf("can't register channel: %w", err))
+		return
 	}
 
-	go func() {
-		for {
-			msg := <-msgChannel
-			go c.consumeFromQueue(&msg)
-		}
-	}()
-
-	return nil
+	for {
+		msg := <-msgChannel
+		go func() {
+			err := c.consumeFromQueue(&msg)
+			if err != nil {
+				nErr := msg.Nack(true, false)
+				if nErr != nil {
+					logger.Error(context.Background(), fmt.Errorf("can't make negative acknowledgement: %w, (original error: %v)", nErr, err))
+				}
+			} else {
+				aErr := msg.Ack(false)
+				if aErr != nil {
+					logger.Error(context.Background(), fmt.Errorf("can't make acknowledgement: %w", aErr))
+				}
+			}
+		}()
+	}
 }
 
 // consumeFromQueue wraps the message processing and confirms its completion.
-func (c *Consumer) consumeFromQueue(msg *amqp.Delivery) {
+func (c *Consumer) consumeFromQueue(msg *amqp.Delivery) error {
 	var data queueMessage
 	err := json.NewDecoder(bytes.NewReader(msg.Body)).Decode(&data)
 	if err != nil {
-		logger.Error(context.Background(), fmt.Errorf("can't decode queue message: %w", err))
-		return
+		return fmt.Errorf("can't decode queue message: %w", err)
 	}
 
 	err = c.process(data)
 	if err != nil {
-		logger.Error(context.Background(), fmt.Errorf("error processing a message from the queue: %w", err))
 		uErr := c.repo.UpdateRequest(data.RequestID, repository.RequestStatusFailed, "")
 		if uErr != nil {
 			logger.Error(context.Background(), fmt.Errorf("can't update request with id %s: %w, (original error: %v)", data.RequestID, err, err))
 		}
-		nErr := msg.Nack(true, false)
-		if err != nil {
-			logger.Error(context.Background(), fmt.Errorf("can't make negative acknowledgement: %w, (original error: %v)", nErr, err))
-		}
-		return
+
+		return fmt.Errorf("error processing a message from the queue: %w", err)
 	}
 
-	err = msg.Ack(false)
-	if err != nil {
-		logger.Error(context.Background(), fmt.Errorf("can't make acknowledgement: %w", err))
-	}
+	return nil
 }
 
 // process processes the current message from the queue.

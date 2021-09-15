@@ -56,10 +56,7 @@ func Start() error {
 		return fmt.Errorf("can't create consumer: %w", err)
 	}
 
-	err = consumer.ListenToQueue()
-	if err != nil {
-		return fmt.Errorf("queue consumer error: %w", err)
-	}
+	go consumer.LaunchListener()
 
 	s := server.NewServer(repo, tokenManager, st, producer)
 	s.RegisterRoutes(r)
