@@ -31,7 +31,10 @@ func Start() error {
 	defer db.Close()
 
 	repo := repository.NewRepository(db)
-	tokenManager := jwt.NewTokenManager(conf.PublicKey, conf.PrivateKey)
+	tokenManager, err := jwt.NewTokenManager(&conf)
+	if err != nil {
+		return fmt.Errorf("token manager error: %w", err)
+	}
 
 	st, err := storage.NewStorage(storage.S3Config{
 		Region:          conf.Region,
