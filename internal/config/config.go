@@ -14,8 +14,8 @@ type Config struct {
 	Port     string `envconfig:"DB_PORT"`
 	SSLMode  string `envconfig:"DB_SSL_MODE"`
 
-	PublicKey  string `envconfig:"JWT_PUBLIC_KEY"`
-	PrivateKey string `envconfig:"JWT_PRIVATE_KEY"`
+	PublicKeyPath  string `envconfig:"JWT_PUBLIC_KEY_PATH"`
+	PrivateKeyPath string `envconfig:"JWT_PRIVATE_KEY_PATH"`
 
 	Region          string `envconfig:"AWS_REGION"`
 	AccessKeyID     string `envconfig:"AWS_ACCESS_KEY_ID"`
