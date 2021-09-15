@@ -7,6 +7,8 @@ import (
 
 // Config represents the application configurations.
 type Config struct {
+	AppPort string `envconfig:"APP_PORT"`
+
 	Username string `envconfig:"DB_USERNAME"`
 	Password string `envconfig:"DB_PASSWORD"`
 	DBName   string `envconfig:"DB_NAME"`

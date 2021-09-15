@@ -63,5 +63,5 @@ func Start() error {
 
 	s := server.NewServer(repo, tokenManager, st, producer)
 	s.RegisterRoutes(r)
-	return http.ListenAndServe(":8080", r)
+	return http.ListenAndServe(":"+conf.AppPort, r)
 }
