@@ -4,11 +4,14 @@ import (
 	"os"
 	"testing"
 
+	"github.com/go-test/deep"
 	"github.com/stretchr/testify/require"
 )
 
 func TestLoad(t *testing.T) {
-	require := require.New(t)
+	required := require.New(t)
+
+	os.Clearenv()
 
 	os.Setenv("APP_PORT", "8080")
 
@@ -28,31 +31,39 @@ func TestLoad(t *testing.T) {
 	os.Setenv("AWS_BUCKET_NAME", "name1234")
 
 	os.Setenv("RABBITMQ_QUEUE_NAME", "converter_queue")
-	os.Setenv("RABBITMQ_CONNECTION_URL", "amqp://guest:guest@localhost:5672/")
+	os.Setenv("RABBITMQ_AMQP_CONNECTION_URL", "amqp://guest:guest@localhost:5672/")
 
 	actual, err := Load()
-	require.NoError(err)
+	required.NoError(err)
 
 	expected := Config{
 		AppPort: "8080",
-
-		Username: "postgres",
-		Password: "qwerty123",
-		DBName:   "ita",
-		Host:     "8080",
-		Port:     "5432",
-		SSLMode:  "disable",
-
-		PublicKeyPath:  "123456789",
-		PrivateKeyPath: "1234567",
-
-		Region:          "eu-central-1",
-		AccessKeyID:     "SGFHSGDHFSGF",
-		SecretAccessKey: "SDFSDFDSFSF84378FDSFSDFSDFD",
-		BucketName:      "name1234",
-
-		QueueName:         "converter_queue",
-		AMQPConnectionURL: "amqp://guest:guest@localhost:5672/",
+		DBConf: &DBConfig{
+			Username: "postgres",
+			Password: "qwerty123",
+			DBName:   "ita",
+			Host:     "8080",
+			Port:     "5432",
+			SSLMode:  "disable",
+		},
+		JWTConf: &JWTConfig{
+			PublicKeyPath:  "123456789",
+			PrivateKeyPath: "1234567",
+		},
+		AWSConf: &AWSConfig{
+			Region:          "eu-central-1",
+			AccessKeyID:     "SGFHSGDHFSGF",
+			SecretAccessKey: "SDFSDFDSFSF84378FDSFSDFSDFD",
+			BucketName:      "name1234",
+		},
+		RabbitMQConf: &RabbitMQConfig{
+			QueueName:         "converter_queue",
+			AMQPConnectionURL: "amqp://guest:guest@localhost:5672/",
+		},
 	}
-	require.Equal(expected, actual)
+
+	dif := deep.Equal(actual, expected)
+	if dif != nil {
+		t.Error(dif)
+	}
 }

@@ -2,8 +2,11 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+
+	"github.com/Konstantsiy/image-converter/pkg/logger"
 
 	"github.com/Konstantsiy/image-converter/internal/queue"
 
@@ -21,8 +24,10 @@ func Start() error {
 
 	conf, err := config.Load()
 	if err != nil {
-		return err
+		return fmt.Errorf("can't load configs: %w", err)
 	}
+
+	logger.Info(context.Background(), "port: "+conf.AppPort)
 
 	db, err := repository.NewPostgresDB(&conf)
 	if err != nil {
@@ -43,20 +48,13 @@ func Start() error {
 		BucketName:      conf.BucketName,
 	})
 	if err != nil {
-		return fmt.Errorf("storage error: %v", err)
+		return fmt.Errorf("can't create storage: %v", err)
 	}
 
 	producer, err := queue.NewProducer(&conf)
 	if err != nil {
 		return fmt.Errorf("can't create publisher: %w", err)
 	}
-
-	consumer, err := queue.NewConsumer(repo, st, &conf)
-	if err != nil {
-		return fmt.Errorf("can't create consumer: %w", err)
-	}
-
-	go consumer.LaunchListener()
 
 	s := server.NewServer(repo, tokenManager, st, producer)
 	s.RegisterRoutes(r)
