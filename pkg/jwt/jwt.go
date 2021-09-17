@@ -22,7 +22,7 @@ type TokenManager struct {
 	privateKey []byte
 }
 
-func NewTokenManager(conf *config.Config) (*TokenManager, error) {
+func NewTokenManager(conf *config.JWTConfig) (*TokenManager, error) {
 	privateKey, err := ioutil.ReadFile(conf.PrivateKeyPath)
 	if err != nil {
 		return nil, fmt.Errorf("can't read private key form file: %w", err)

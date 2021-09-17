@@ -25,7 +25,7 @@ type rabbitMQClient struct {
 }
 
 // initRabbitMQClient initializes the queue client.
-func initRabbitMQClient(conf *config.Config) (*rabbitMQClient, error) {
+func initRabbitMQClient(conf *config.RabbitMQConfig) (*rabbitMQClient, error) {
 	if conf.AMQPConnectionURL == "" || conf.QueueName == "" {
 		return nil, fmt.Errorf("RabbitMQ configurations should not be empty")
 	}

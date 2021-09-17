@@ -2,11 +2,8 @@
 package app
 
 import (
-	"context"
 	"fmt"
 	"net/http"
-
-	"github.com/Konstantsiy/image-converter/pkg/logger"
 
 	"github.com/Konstantsiy/image-converter/internal/queue"
 
@@ -27,31 +24,24 @@ func Start() error {
 		return fmt.Errorf("can't load configs: %w", err)
 	}
 
-	logger.Info(context.Background(), "port: "+conf.AppPort)
-
-	db, err := repository.NewPostgresDB(&conf)
+	db, err := repository.NewPostgresDB(conf.DBConf)
 	if err != nil {
 		return fmt.Errorf("can't connect to postgres database: %v", err)
 	}
 	defer db.Close()
 
 	repo := repository.NewRepository(db)
-	tokenManager, err := jwt.NewTokenManager(&conf)
+	tokenManager, err := jwt.NewTokenManager(conf.JWTConf)
 	if err != nil {
 		return fmt.Errorf("token manager error: %w", err)
 	}
 
-	st, err := storage.NewStorage(storage.S3Config{
-		Region:          conf.Region,
-		AccessKeyID:     conf.AccessKeyID,
-		SecretAccessKey: conf.SecretAccessKey,
-		BucketName:      conf.BucketName,
-	})
+	st, err := storage.NewStorage(conf.AWSConf)
 	if err != nil {
 		return fmt.Errorf("can't create storage: %v", err)
 	}
 
-	producer, err := queue.NewProducer(&conf)
+	producer, err := queue.NewProducer(conf.RabbitMQConf)
 	if err != nil {
 		return fmt.Errorf("can't create publisher: %w", err)
 	}

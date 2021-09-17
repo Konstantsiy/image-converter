@@ -22,7 +22,7 @@ type Consumer struct {
 	storage *storage.Storage
 }
 
-func NewConsumer(repo *repository.Repository, storage *storage.Storage, conf *config.Config) (*Consumer, error) {
+func NewConsumer(repo *repository.Repository, storage *storage.Storage, conf *config.RabbitMQConfig) (*Consumer, error) {
 	client, err := initRabbitMQClient(conf)
 	if err != nil {
 		return nil, err
@@ -31,17 +31,15 @@ func NewConsumer(repo *repository.Repository, storage *storage.Storage, conf *co
 }
 
 // LaunchListener listens to the queue channel in a separate goroutine.
-func (c *Consumer) LaunchListener() {
+func (c *Consumer) LaunchListener() error {
 	err := c.client.ch.Qos(1, 0, false)
 	if err != nil {
-		logger.Error(context.Background(), fmt.Errorf("can't configure QoS: %w", err))
-		return
+		return fmt.Errorf("can't configure QoS: %w", err)
 	}
 
 	msgChannel, err := c.client.ch.Consume(c.client.queue.Name, "", false, false, false, false, nil)
 	if err != nil {
-		logger.Error(context.Background(), fmt.Errorf("can't register channel: %w", err))
-		return
+		return fmt.Errorf("can't register channel: %w", err)
 	}
 
 	for {
@@ -53,11 +51,11 @@ func (c *Consumer) LaunchListener() {
 				if nErr != nil {
 					logger.Error(context.Background(), fmt.Errorf("can't make negative acknowledgement: %w, (original error: %v)", nErr, err))
 				}
-			} else {
-				aErr := msg.Ack(false)
-				if aErr != nil {
-					logger.Error(context.Background(), fmt.Errorf("can't make acknowledgement: %w", aErr))
-				}
+				return
+			}
+			aErr := msg.Ack(false)
+			if aErr != nil {
+				logger.Error(context.Background(), fmt.Errorf("can't make acknowledgement: %w", aErr))
 			}
 		}()
 	}

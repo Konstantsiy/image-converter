@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"time"
 
+	"github.com/Konstantsiy/image-converter/internal/config"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -16,29 +18,20 @@ import (
 
 const URLTimeout = 10 * time.Minute
 
-// S3Config used to configure the session, create a bucket,
-// and connect to the SDK's service client.
-type S3Config struct {
-	Region          string
-	AccessKeyID     string
-	SecretAccessKey string
-	BucketName      string
-}
-
 // Storage implements the functionality of file storage (Amazon S3).
 type Storage struct {
 	svc    *s3.S3
-	s3conf S3Config
+	s3conf *config.AWSConfig
 }
 
 // NewStorage creates new file storage with the given S3 configs and bucket name.
-func NewStorage(s3conf S3Config) (*Storage, error) {
+func NewStorage(s3conf *config.AWSConfig) (*Storage, error) {
 	err := validateAWSConfig(s3conf)
 	if err != nil {
 		return nil, err
 	}
 
-	svc, err := initS3ServiceClient(s3conf)
+	svc, err := initS3ServiceClient(*s3conf)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +40,7 @@ func NewStorage(s3conf S3Config) (*Storage, error) {
 }
 
 // validateAWSConfig validates AWS configurations.
-func validateAWSConfig(s3conf S3Config) error {
+func validateAWSConfig(s3conf *config.AWSConfig) error {
 	if s3conf.BucketName == "" || s3conf.SecretAccessKey == "" || s3conf.AccessKeyID == "" || s3conf.Region == "" {
 		return fmt.Errorf("AWS configurations should not be empty")
 	}
@@ -55,8 +48,8 @@ func validateAWSConfig(s3conf S3Config) error {
 }
 
 // initS3ServiceClient initializes SDK's service client.
-func initS3ServiceClient(s3conf S3Config) (*s3.S3, error) {
-	s3session, err := createSession(s3conf)
+func initS3ServiceClient(s3conf config.AWSConfig) (*s3.S3, error) {
+	s3session, err := createSession(&s3conf)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +58,7 @@ func initS3ServiceClient(s3conf S3Config) (*s3.S3, error) {
 }
 
 // createSession creates and returns a new session.
-func createSession(s3conf S3Config) (*session.Session, error) {
+func createSession(s3conf *config.AWSConfig) (*session.Session, error) {
 	s3session, err := session.NewSession(&aws.Config{
 		Region:      aws.String(s3conf.Region),
 		Credentials: credentials.NewStaticCredentials(s3conf.AccessKeyID, s3conf.SecretAccessKey, ""),

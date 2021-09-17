@@ -15,7 +15,7 @@ type Producer struct {
 	client *rabbitMQClient
 }
 
-func NewProducer(conf *config.Config) (*Producer, error) {
+func NewProducer(conf *config.RabbitMQConfig) (*Producer, error) {
 	client, err := initRabbitMQClient(conf)
 	if err != nil {
 		return nil, err
