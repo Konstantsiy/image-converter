@@ -6,6 +6,7 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/aws/aws-sdk-go v1.40.14
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/go-test/deep v1.0.7
 	github.com/gorilla/mux v1.8.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lib/pq v1.10.2
