@@ -2,7 +2,7 @@ FROM golang:latest
 
 RUN apk add --no-cache git
 
-WORKDIR ./app
+WORKDIR /app
 
 COPY go.mod .
 COPY go.sum .
@@ -12,3 +12,5 @@ RUN go mod download
 COPY . .
 
 RUN go build -o api_main ./cmd/api/main.go
+
+ENTRYPOINT ["/api_main"]

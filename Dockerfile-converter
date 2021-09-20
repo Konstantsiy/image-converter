@@ -12,3 +12,5 @@ RUN go mod download
 COPY . .
 
 RUN go build -o converter_main ./cmd/converter/main.go
+
+ENTRYPOINT ["/converter_main"]
