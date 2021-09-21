@@ -30,8 +30,8 @@ func NewConsumer(repo *repository.Repository, storage *storage.Storage, conf *co
 	return &Consumer{repo: repo, storage: storage, client: client}, nil
 }
 
-// LaunchListener listens to the queue channel in a separate goroutine.
-func (c *Consumer) LaunchListener() error {
+// Listen listens to the queue channel in a separate goroutine.
+func (c *Consumer) Listen() error {
 	err := c.client.ch.Qos(1, 0, false)
 	if err != nil {
 		return fmt.Errorf("can't configure QoS: %w", err)

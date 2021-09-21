@@ -33,7 +33,7 @@ func StartListener() error {
 		return fmt.Errorf("can't create consumer: %w", err)
 	}
 
-	err = consumer.LaunchListener()
+	err = consumer.Listen()
 	if err != nil {
 		return fmt.Errorf("can't start listening to the queue: %w", err)
 	}
