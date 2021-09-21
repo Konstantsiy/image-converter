@@ -1,15 +1,63 @@
 version: '3'
 services:
-  database:
-    image: postgres:13-alpine
+  postgresql:
+    image: postgres:latest
     restart: always
-    env_file:
-      - database.env
+    container_name: postgresql
+    env_file: .env
+    ports:
+      - 5432:5432
     volumes:
       - ./scripts:/docker-entrypoint-initdb.d
       - ./data:/var/lib/postgresql/data/
+    networks:
+      - app_default
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    restart: always
+    container_name: rabbitmq
+    env_file: .env
     ports:
-    - 5433:5432
+    - 5672:5672
+    - 15672:15672
+    volumes:
+      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+    networks:
+      - app_default
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile-api
+    container_name: api
+    ports:
+    - 8080:8080
+    env_file: .env
+    restart: always
+    networks:
+      - app_default
+    depends_on:
+      - postgresql
+      - rabbitmq
+
+  converter:
+    build:
+      context: .
+      dockerfile: Dockerfile-converter
+    container_name: api
+    env_file: .env
+    restart: always
+    networks:
+      - app_default
+    depends_on:
+      - api
+      - postgresql
+      - rabbitmq
 
 volumes:
   database-data:
+networks:
+  app_default:
+    driver: bridge

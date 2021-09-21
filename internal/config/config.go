@@ -5,27 +5,48 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
+// DBConfig required to configure the database.
+type DBConfig struct {
+	Username string `envconfig:"USERNAME"`
+	Password string `envconfig:"PASSWORD"`
+	DBName   string `envconfig:"NAME"`
+	Host     string `envconfig:"HOST"`
+	Port     string `envconfig:"PORT"`
+	SSLMode  string `envconfig:"SSL_MODE"`
+}
+
+// AWSConfig required to configure the AWS S3 bucket.
+type AWSConfig struct {
+	Region          string `envconfig:"REGION"`
+	AccessKeyID     string `envconfig:"ACCESS_KEY_ID"`
+	SecretAccessKey string `envconfig:"SECRET_ACCESS_KEY"`
+	BucketName      string `envconfig:"BUCKET_NAME"`
+}
+
+// JWTConfig required for configuring work with JWT.
+type JWTConfig struct {
+	PublicKeyPath  string `envconfig:"PUBLIC_KEY_PATH"`
+	PrivateKeyPath string `envconfig:"PRIVATE_KEY_PATH"`
+}
+
+// RabbitMQConfig required to configure the RabbitMQ.
+type RabbitMQConfig struct {
+	QueueName         string `envconfig:"QUEUE_NAME"`
+	AMQPConnectionURL string `envconfig:"AMQP_CONNECTION_URL"`
+}
+
 // Config represents the application configurations.
 type Config struct {
-	Username string `envconfig:"DB_USERNAME"`
-	Password string `envconfig:"DB_PASSWORD"`
-	DBName   string `envconfig:"DB_NAME"`
-	Host     string `envconfig:"DB_HOST"`
-	Port     string `envconfig:"DB_PORT"`
-	SSLMode  string `envconfig:"DB_SSL_MODE"`
-
-	PublicKey  string `envconfig:"JWT_PUBLIC_KEY"`
-	PrivateKey string `envconfig:"JWT_PRIVATE_KEY"`
-
-	Region          string `envconfig:"AWS_REGION"`
-	AccessKeyID     string `envconfig:"AWS_ACCESS_KEY_ID"`
-	SecretAccessKey string `envconfig:"AWS_SECRET_ACCESS_KEY"`
-	BucketName      string `envconfig:"AWS_BUCKET_NAME"`
+	AppPort      string          `envconfig:"APP_PORT"`
+	DBConf       *DBConfig       `envconfig:"DB"`
+	JWTConf      *JWTConfig      `envconfig:"JWT"`
+	AWSConf      *AWSConfig      `envconfig:"AWS"`
+	RabbitMQConf *RabbitMQConfig `envconfig:"RABBITMQ"`
 }
 
 // Load loads the necessary configurations.
 func Load() (Config, error) {
 	var c Config
-	err := envconfig.Process("", &c)
+	err := envconfig.Process("envconfig", &c)
 	return c, err
 }

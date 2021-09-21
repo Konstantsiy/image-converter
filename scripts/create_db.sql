@@ -17,7 +17,7 @@ $$;
 do $$
     begin
         if not exists(select 1 from pg_type where typname = 'file_format') then
-            create type file_format as enum ('jpeg', 'png');
+            create type file_format as enum ('jpg', 'png');
         end if;
     end
 $$;
@@ -25,7 +25,7 @@ $$;
 do $$
     begin
         if not exists(select 1 from pg_type where typname = 'status') then
-            create type status as enum ('queued', 'processed', 'failed', 'done');
+            create type status as enum ('queued', 'processing', 'failed', 'done');
         end if;
     end
 $$;
@@ -33,7 +33,7 @@ $$;
 create table if not exists converter.users (
     id uuid default uuid_generate_v1() primary key,
     email varchar(50) unique not null,
-    password varchar(50) not null,
+    password varchar(120) not null,
     created timestamp without time zone default current_timestamp not null,
     updated timestamp without time zone default current_timestamp not null
 );

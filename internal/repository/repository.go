@@ -160,8 +160,8 @@ func (r *Repository) GetRequestsByUserID(userID string) ([]ConversionRequest, er
 func (r *Repository) MakeRequest(userID, sourceID, sourceFormat, targetFormat string, ratio int) (string, error) {
 	var requestID string
 	const query = `insert into converter.requests 
-		(user_id, source_id, target_id, source_format, target_format, ratio, 'queued')
-		values ($1, $2, NULL, $3, $4, $5) 
+		(user_id, source_id, target_id, source_format, target_format, ratio, status)
+		values ($1, $2, NULL, $3, $4, $5, 'queued') 
 		returning id;`
 
 	err := r.db.QueryRow(query, userID, sourceID, sourceFormat, targetFormat, ratio).Scan(&requestID)

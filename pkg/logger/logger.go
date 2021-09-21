@@ -10,9 +10,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+type key int
+
 const (
-	loggerKey              = 1
-	DefaultTimestampFormat = "2006-01-02 15:04:05"
+	loggerKey              key = 1
+	DefaultTimestampFormat     = "2006-01-02 15:04:05"
 )
 
 var ctxLogger = &log.Logger{

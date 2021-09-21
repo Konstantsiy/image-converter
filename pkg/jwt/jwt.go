@@ -3,7 +3,10 @@ package jwt
 
 import (
 	"fmt"
+	"io/ioutil"
 	"time"
+
+	"github.com/Konstantsiy/image-converter/internal/config"
 
 	"github.com/dgrijalva/jwt-go"
 )
@@ -15,15 +18,21 @@ const (
 
 // TokenManager implements functionality for Access & Refresh tokens generation.
 type TokenManager struct {
-	publicKey  string
-	privateKey string
+	publicKey  []byte
+	privateKey []byte
 }
 
-func NewTokenManager(publicKey, privateKey string) *TokenManager {
-	return &TokenManager{
-		publicKey:  publicKey,
-		privateKey: privateKey,
+func NewTokenManager(conf *config.JWTConfig) (*TokenManager, error) {
+	privateKey, err := ioutil.ReadFile(conf.PrivateKeyPath)
+	if err != nil {
+		return nil, fmt.Errorf("can't read private key form file: %w", err)
 	}
+	publicKey, err := ioutil.ReadFile(conf.PublicKeyPath)
+	if err != nil {
+		return nil, fmt.Errorf("can't read public key form file: %w", err)
+	}
+
+	return &TokenManager{publicKey: publicKey, privateKey: privateKey}, nil
 }
 
 // GenerateAccessToken generates new access token.
@@ -54,7 +63,7 @@ func (tm *TokenManager) ParseToken(accessToken string) (string, error) {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return jwt.ParseECPublicKeyFromPEM([]byte(tm.publicKey))
+		return jwt.ParseECPublicKeyFromPEM(tm.publicKey)
 	})
 	if err != nil || !token.Valid {
 		return "", fmt.Errorf("can't parse token: %w", err)
