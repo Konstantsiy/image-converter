@@ -33,7 +33,7 @@ services:
       dockerfile: Dockerfile-api
     container_name: api
     ports:
-    - 8000:8000
+    - 8080:8080
     env_file: .env
     restart: always
     networks:
