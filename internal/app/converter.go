@@ -1,7 +1,10 @@
 package app
 
 import (
+	"context"
 	"fmt"
+
+	"github.com/Konstantsiy/image-converter/pkg/logger"
 
 	"github.com/Konstantsiy/image-converter/internal/config"
 	"github.com/Konstantsiy/image-converter/internal/queue"
@@ -14,6 +17,8 @@ func StartListener() error {
 	if err != nil {
 		return fmt.Errorf("can't load configs: %w", err)
 	}
+
+	logger.Info(context.Background(), "db_port: "+conf.DBConf.Port)
 
 	db, err := repository.NewPostgresDB(conf.DBConf)
 	if err != nil {
