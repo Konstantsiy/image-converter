@@ -2,12 +2,15 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/Konstantsiy/image-converter/pkg/logger"
 
 	"github.com/Konstantsiy/image-converter/internal/queue"
 
@@ -80,18 +83,6 @@ func NewServer(repo *repository.Repository, tokenManager *jwt.TokenManager, stor
 	}
 }
 
-// StatusRecorder contains a writer for storing the requests status code.
-type StatusRecorder struct {
-	http.ResponseWriter
-	StatusCode int
-}
-
-// WriteHeader saves requests status code.
-func (sr *StatusRecorder) WriteHeader(statusCode int) {
-	sr.StatusCode = statusCode
-	sr.ResponseWriter.WriteHeader(statusCode)
-}
-
 // RegisterRoutes registers application routers.
 func (s *Server) RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/user/login", s.LogIn).Methods("POST")
@@ -142,7 +133,7 @@ func (s *Server) LogIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprint(w, &LoginResponse{AccessToken: accessToken, RefreshToken: refreshToken})
+	sendResponse(w, LoginResponse{AccessToken: accessToken, RefreshToken: refreshToken}, http.StatusOK)
 }
 
 // SignUp implements the user registration process.
@@ -177,7 +168,7 @@ func (s *Server) SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprint(w, &SignUpResponse{UserID: userID})
+	sendResponse(w, SignUpResponse{UserID: userID}, http.StatusOK)
 }
 
 // ConvertImage converts needed image according to the request.
@@ -227,7 +218,7 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprint(w, ConvertResponse{RequestID: requestID}, http.StatusAccepted)
+	sendResponse(w, ConvertResponse{RequestID: requestID}, http.StatusAccepted)
 
 	err = s.producer.SendToQueue(sourceFileID, filename, sourceFormat, targetFormat, requestID, ratio)
 	if err != nil {
@@ -257,7 +248,7 @@ func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprint(w, &DownloadResponse{ImageURL: url})
+	sendResponse(w, DownloadResponse{ImageURL: url}, http.StatusOK)
 }
 
 // GetRequestsHistory displays the user's request history.
@@ -274,5 +265,19 @@ func (s *Server) GetRequestsHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprint(w, fmt.Sprint(requestsHistory))
+	sendResponse(w, requestsHistory, http.StatusOK)
+}
+
+// sendResponse marshals and writes response to the ResponseWriter.
+func sendResponse(w http.ResponseWriter, resp interface{}, code int) {
+	respJSON, err := json.Marshal(resp)
+	if err != nil {
+		logger.Error(context.Background(), fmt.Errorf("can't marshal response: %v", err))
+		fmt.Fprint(w, resp)
+		return
+	}
+
+	w.WriteHeader(code)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(respJSON)
 }

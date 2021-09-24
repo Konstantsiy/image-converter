@@ -9,6 +9,18 @@ import (
 	"github.com/Konstantsiy/image-converter/pkg/logger"
 )
 
+// StatusRecorder contains a writer for storing the requests status code.
+type StatusRecorder struct {
+	http.ResponseWriter
+	StatusCode int
+}
+
+// WriteHeader saves requests status code.
+func (sr *StatusRecorder) WriteHeader(statusCode int) {
+	sr.StatusCode = statusCode
+	sr.ResponseWriter.WriteHeader(statusCode)
+}
+
 // LoggingMiddleware logs http requests after they are executed.
 func (s *Server) LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
