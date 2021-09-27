@@ -8,8 +8,8 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - ./scripts:/docker-entrypoint-initdb.d
-      - ~/data:/var/lib/postgresql/data/
+      - ./scripts/create_db.sql:/docker-entrypoint-initdb.d/create_db.sql
+      - ./data:/var/lib/postgresql/data/
     networks:
       - app_default
 
@@ -22,14 +22,14 @@ services:
     - 5672:5672
     - 15672:15672
     volumes:
-      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
-      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+      - ./docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+      - ./docker-conf/rabbitmq/log/:/var/log/rabbitmq
     networks:
       - app_default
 
   api:
     build:
-      context: .
+      context: ""
       dockerfile: Dockerfile-api
     container_name: api
     ports:
@@ -44,9 +44,9 @@ services:
 
   converter:
     build:
-      context: .
+      context: ""
       dockerfile: Dockerfile-converter
-    container_name: api
+    container_name: converter
     env_file: .env
     restart: always
     networks:
