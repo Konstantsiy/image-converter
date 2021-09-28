@@ -1,5 +1,5 @@
 # .golangci.yml
-linters: # todo to ignore
+linters:
   disable-all: true
   enable:
     - goimports

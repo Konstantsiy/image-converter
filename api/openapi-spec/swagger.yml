@@ -149,7 +149,7 @@ paths:
                     type: string
                     description: link for download each available file in AWS S3 bucket
               example:
-                link: http(s)://s3.amazonaws.com/path/to/the/file/file_name.extension # todo
+                link: http(s)://s3.amazonaws.com/path/to/the/file/file_name.extension
         400:
           $ref: '#/components/responses/BadRequest'
         401:

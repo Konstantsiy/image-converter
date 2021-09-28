@@ -17,7 +17,7 @@ $$;
 do $$
     begin
         if not exists(select 1 from pg_type where typname = 'file_format') then
-            create type file_format as enum ('jpg', 'png');
+            create type file_format as enum ('jpg', 'jpeg', 'png');
         end if;
     end
 $$;

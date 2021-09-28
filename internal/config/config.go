@@ -7,7 +7,7 @@ import (
 
 // DBConfig required to configure the database.
 type DBConfig struct {
-	Username string `envconfig:"USERNAME"`
+	User     string `envconfig:"USER"`
 	Password string `envconfig:"PASSWORD"`
 	DBName   string `envconfig:"NAME"`
 	Host     string `envconfig:"HOST"`
@@ -47,6 +47,6 @@ type Config struct {
 // Load loads the necessary configurations.
 func Load() (Config, error) {
 	var c Config
-	err := envconfig.Process("envconfig", &c)
+	err := envconfig.Process("", &c)
 	return c, err
 }

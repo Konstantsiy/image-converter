@@ -11,11 +11,11 @@ import (
 func TestLoad(t *testing.T) {
 	required := require.New(t)
 
-	os.Clearenv()
+	//os.Clearenv()
 
 	os.Setenv("APP_PORT", "8080")
 
-	os.Setenv("DB_USERNAME", "postgres")
+	os.Setenv("DB_USER", "postgres")
 	os.Setenv("DB_PASSWORD", "qwerty123")
 	os.Setenv("DB_NAME", "ita")
 	os.Setenv("DB_HOST", "8080")
@@ -39,7 +39,7 @@ func TestLoad(t *testing.T) {
 	expected := Config{
 		AppPort: "8080",
 		DBConf: &DBConfig{
-			Username: "postgres",
+			User:     "postgres",
 			Password: "qwerty123",
 			DBName:   "ita",
 			Host:     "8080",

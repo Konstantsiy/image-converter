@@ -34,17 +34,16 @@ type User struct {
 
 // ConversionRequest represents conversion request in the database.
 type ConversionRequest struct {
-	ID           string
-	Name         string
-	UserID       string
-	SourceID     string
-	TargetID     string
-	SourceFormat string
-	TargetFormat string
-	Ratio        int
-	Created      time.Time
-	Updated      time.Time
-	Status       string
+	ID           string    `json:"id"`
+	UserID       string    `json:"user_id"`
+	SourceID     string    `json:"source_id"`
+	TargetID     string    `json:"target_id"`
+	SourceFormat string    `json:"source_format"`
+	TargetFormat string    `json:"target_format"`
+	Ratio        int       `json:"ratio"`
+	Created      time.Time `json:"created"`
+	Updated      time.Time `json:"updated"`
+	Status       string    `json:"status"`
 }
 
 // Repository represents the layer between the business logic and the database.
@@ -132,17 +131,16 @@ func (r *Repository) GetRequestsByUserID(userID string) ([]ConversionRequest, er
 
 	for rows.Next() {
 		err = rows.Scan(
-			request.ID,
-			request.UserID,
-			request.Name,
-			request.SourceID,
-			request.TargetID,
-			request.SourceFormat,
-			request.TargetFormat,
-			request.Ratio,
-			request.Status,
-			request.Created,
-			request.Updated)
+			&request.ID,
+			&request.UserID,
+			&request.SourceID,
+			&request.TargetID,
+			&request.SourceFormat,
+			&request.TargetFormat,
+			&request.Ratio,
+			&request.Status,
+			&request.Created,
+			&request.Updated)
 		if err != nil {
 			return nil, fmt.Errorf("can't scan user request from rows: %w", err)
 		}
