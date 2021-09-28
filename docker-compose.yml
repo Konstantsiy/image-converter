@@ -5,6 +5,11 @@ services:
     restart: always
     container_name: postgresql
     env_file: .env
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+      - DATABASE_HOST=${DB_HOST}
     ports:
       - 5432:5432
     volumes:
@@ -18,9 +23,12 @@ services:
     restart: always
     container_name: rabbitmq
     env_file: .env
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
     ports:
-    - 5672:5672
-    - 15672:15672
+    - 5672:5672 # AMQP protocol port
+    - 15672:15672 # HTTP management UI
     volumes:
       - ./docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
       - ./docker-conf/rabbitmq/log/:/var/log/rabbitmq
@@ -29,7 +37,7 @@ services:
 
   api:
     build:
-      context: ""
+      context: .
       dockerfile: Dockerfile-api
     container_name: api
     ports:
@@ -44,7 +52,7 @@ services:
 
   converter:
     build:
-      context: ""
+      context: .
       dockerfile: Dockerfile-converter
     container_name: converter
     env_file: .env
