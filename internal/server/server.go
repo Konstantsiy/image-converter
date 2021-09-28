@@ -2,15 +2,12 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
-
-	"github.com/Konstantsiy/image-converter/pkg/logger"
 
 	"github.com/Konstantsiy/image-converter/internal/queue"
 
@@ -102,34 +99,34 @@ func (s *Server) LogIn(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		reportError(w, err, http.StatusUnauthorized)
 		return
 	}
 	defer r.Body.Close()
 
 	user, err := s.repo.GetUserByEmail(request.Email)
 	if err == repository.ErrNoSuchUser {
-		http.Error(w, "invalid email or password", http.StatusUnauthorized)
+		reportError(w, fmt.Errorf("invalid email or password"), http.StatusUnauthorized)
 		return
 	}
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		reportError(w, err, http.StatusInternalServerError)
 		return
 	}
 
 	if ok, err := hash.ComparePasswords(user.Password, request.Password); !ok || err != nil {
-		http.Error(w, "invalid email or password", http.StatusUnauthorized)
+		reportError(w, fmt.Errorf("invalid email or password"), http.StatusUnauthorized)
 		return
 	}
 
 	accessToken, err := s.tokenManager.GenerateAccessToken(user.ID)
 	if err != nil {
-		http.Error(w, "can't generate access token: "+err.Error(), http.StatusInternalServerError)
+		reportError(w, fmt.Errorf("can't generate access token: %w", err), http.StatusInternalServerError)
 		return
 	}
 	refreshToken, err := s.tokenManager.GenerateRefreshToken()
 	if err != nil {
-		http.Error(w, "can't generate refresh token: "+err.Error(), http.StatusInternalServerError)
+		reportError(w, fmt.Errorf("can't generate refresh token: %w", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -142,29 +139,29 @@ func (s *Server) SignUp(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		reportError(w, err, http.StatusUnauthorized)
 		return
 	}
 	defer r.Body.Close()
 
 	if err = validation.ValidateSignUpRequest(request.Email, request.Password); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		reportError(w, err, http.StatusBadRequest)
 		return
 	}
 
 	hashPwd, err := hash.GeneratePasswordHash(request.Password)
 	if err != nil {
-		http.Error(w, "can't generate password hash: "+err.Error(), http.StatusInternalServerError)
+		reportError(w, fmt.Errorf("can't generate password hash: %w", err), http.StatusInternalServerError)
 		return
 	}
 
 	userID, err := s.repo.InsertUser(request.Email, hashPwd)
 	if errors.Is(err, repository.ErrUserAlreadyExists) {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		reportError(w, err, http.StatusBadRequest)
 		return
 	}
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		reportError(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -175,7 +172,7 @@ func (s *Server) SignUp(w http.ResponseWriter, r *http.Request) {
 func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 	sourceFile, header, err := r.FormFile("file")
 	if err != nil {
-		http.Error(w, "can't get sourceFile from form", http.StatusBadRequest)
+		reportError(w, fmt.Errorf("can't get sourceFile from form"), http.StatusBadRequest)
 		return
 	}
 	defer sourceFile.Close()
@@ -185,36 +182,36 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 	filename := strings.TrimSuffix(header.Filename, "."+sourceFormat)
 	ratio, err := strconv.Atoi(r.FormValue("ratio"))
 	if err != nil {
-		http.Error(w, "invalid ratio form value", http.StatusBadRequest)
+		reportError(w, fmt.Errorf("invalid ratio form value"), http.StatusBadRequest)
 		return
 	}
 
 	if err = validation.ValidateConversionRequest(filename, sourceFormat, targetFormat, ratio); err != nil {
-		http.Error(w, fmt.Sprint(err.Error()), http.StatusBadRequest)
+		reportError(w, err, http.StatusBadRequest)
 		return
 	}
 
 	userID, ok := appcontext.UserIDFromContext(r.Context())
 	if !ok {
-		http.Error(w, "can't get user id from application context", http.StatusInternalServerError)
+		reportError(w, fmt.Errorf("can't get user id from application context"), http.StatusInternalServerError)
 		return
 	}
 
 	sourceFileID, err := s.repo.InsertImage(filename, sourceFormat)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("repository error: %v", err), http.StatusInternalServerError)
+		reportError(w, fmt.Errorf("repository error: %w", err), http.StatusInternalServerError)
 		return
 	}
 
 	err = s.storage.UploadFile(sourceFile, sourceFileID)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("storage error: %v", err), http.StatusInternalServerError)
+		reportError(w, fmt.Errorf("storage error: %w", err), http.StatusInternalServerError)
 		return
 	}
 
 	requestID, err := s.repo.MakeRequest(userID, sourceFileID, sourceFormat, targetFormat, ratio)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("repository error: %v", err), http.StatusInternalServerError)
+		reportError(w, fmt.Errorf("repository error: %w", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -222,7 +219,7 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 
 	err = s.producer.SendToQueue(sourceFileID, filename, sourceFormat, targetFormat, requestID, ratio)
 	if err != nil {
-		http.Error(w, fmt.Sprint("can't send data to queue: %w", err), http.StatusInternalServerError)
+		reportError(w, fmt.Errorf("can't send data to queue: %w", err), http.StatusInternalServerError)
 		return
 	}
 }
@@ -234,17 +231,17 @@ func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
 
 	imageID, err := s.repo.GetImageIDInStore(id)
 	if errors.Is(err, repository.ErrNoSuchImage) {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		reportError(w, err, http.StatusNotFound)
 		return
 	}
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		reportError(w, err, http.StatusInternalServerError)
 		return
 	}
 
 	url, err := s.storage.GetDownloadURL(imageID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		reportError(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -255,29 +252,15 @@ func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
 func (s *Server) GetRequestsHistory(w http.ResponseWriter, r *http.Request) {
 	userID, ok := appcontext.UserIDFromContext(r.Context())
 	if !ok {
-		http.Error(w, "can't get user id from application context", http.StatusInternalServerError)
+		reportError(w, fmt.Errorf("can't get user id from application contex"), http.StatusInternalServerError)
 		return
 	}
 
 	requestsHistory, err := s.repo.GetRequestsByUserID(userID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		reportError(w, err, http.StatusInternalServerError)
 		return
 	}
 
 	sendResponse(w, requestsHistory, http.StatusOK)
-}
-
-// sendResponse marshals and writes response to the ResponseWriter.
-func sendResponse(w http.ResponseWriter, resp interface{}, code int) {
-	respJSON, err := json.Marshal(resp)
-	if err != nil {
-		logger.Error(context.Background(), fmt.Errorf("can't marshal response: %v", err))
-		fmt.Fprint(w, resp)
-		return
-	}
-
-	w.WriteHeader(code)
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(respJSON)
 }
