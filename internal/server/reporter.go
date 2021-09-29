@@ -20,7 +20,10 @@ func sendResponse(w http.ResponseWriter, resp interface{}, statusCode int) {
 
 	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(respJSON)
+	_, err = w.Write(respJSON)
+	if err != nil {
+		reportError(w, fmt.Errorf("can't write HTTP reply: %w", err), http.StatusInternalServerError)
+	}
 }
 
 // reportError logs and writes an error with the corresponding HTTP code to the ResponseWriter.
