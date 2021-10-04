@@ -27,6 +27,9 @@ func Start() error {
 		return fmt.Errorf("can't load configs: %w", err)
 	}
 
+	logger.Info(context.Background(), fmt.Sprintf("configs:\nport: %s\nDB: %+v\nAWS: %+v\nJWT: %+v\nRabbit: %+v\n",
+		conf.AppPort, conf.DBConf, conf.AWSConf, conf.JWTConf, conf.RabbitMQConf))
+
 	db, err := repository.NewPostgresDB(conf.DBConf)
 	if err != nil {
 		return fmt.Errorf("can't connect to postgres database: %v", err)

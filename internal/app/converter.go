@@ -18,8 +18,8 @@ func StartListener() error {
 		return fmt.Errorf("can't load configs: %w", err)
 	}
 
-	fmt.Printf("API configs: \n\tAppPort: %v\n\tDB: %+v\n\tJWT: %+v\n\tAWS: %+v\n\tRabbit: %+v\n",
-		conf.AppPort, conf.DBConf, conf.JWTConf, conf.AWSConf, conf.RabbitMQConf)
+	logger.Info(context.Background(), fmt.Sprintf("configs:\nport: %s\nDB: %+v\nAWS: %+v\nJWT: %+v\nRabbit: %+v\n",
+		conf.AppPort, conf.DBConf, conf.AWSConf, conf.JWTConf, conf.RabbitMQConf))
 
 	db, err := repository.NewPostgresDB(conf.DBConf)
 	if err != nil {

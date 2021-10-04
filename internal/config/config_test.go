@@ -11,8 +11,6 @@ import (
 func TestLoad(t *testing.T) {
 	required := require.New(t)
 
-	//os.Clearenv()
-
 	os.Setenv("APP_PORT", "8080")
 
 	os.Setenv("DB_USER", "postgres")

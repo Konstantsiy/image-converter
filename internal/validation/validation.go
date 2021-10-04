@@ -108,6 +108,13 @@ func ValidateConversionRequest(filename, sourceFormat, targetFormat string, rati
 		}
 	}
 
+	if targetFormat == "jpeg" {
+		targetFormat = "jpg"
+	}
+	if sourceFormat == "jpeg" {
+		sourceFormat = "jpg"
+	}
+
 	if _, ok := formats[sourceFormat]; !ok {
 		return &InvalidParameterError{
 			Param:   "source format",

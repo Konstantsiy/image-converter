@@ -87,7 +87,7 @@ func (r *Repository) InsertImage(filename, format string) (string, error) {
 // GetImageIDInStore returns the image id to the storage.
 func (r *Repository) GetImageIDInStore(id string) (string, error) {
 	var imageID string
-	const query = "select id form converter.images where id=$1;"
+	const query = "select id from converter.images where id=$1;"
 
 	err := r.db.QueryRow(query, id).Scan(&imageID)
 	if err == sql.ErrNoRows {
@@ -120,7 +120,8 @@ func (r *Repository) GetUserByEmail(email string) (User, error) {
 func (r *Repository) GetRequestsByUserID(userID string) ([]ConversionRequest, error) {
 	var requests []ConversionRequest
 	var request ConversionRequest
-	const query = `select id, name, source_id, target_id, source_format, target_format, ratio, status, created, updated
+	var targetIDNull sql.NullString
+	const query = `select id, user_id, source_id, target_id, source_format, target_format, ratio, status, created, updated
 		from converter.requests where user_id = $1;`
 
 	rows, err := r.db.Query(query, userID)
@@ -134,7 +135,7 @@ func (r *Repository) GetRequestsByUserID(userID string) ([]ConversionRequest, er
 			&request.ID,
 			&request.UserID,
 			&request.SourceID,
-			&request.TargetID,
+			&targetIDNull,
 			&request.SourceFormat,
 			&request.TargetFormat,
 			&request.Ratio,
@@ -143,6 +144,11 @@ func (r *Repository) GetRequestsByUserID(userID string) ([]ConversionRequest, er
 			&request.Updated)
 		if err != nil {
 			return nil, fmt.Errorf("can't scan user request from rows: %w", err)
+		}
+		if targetIDNull.Valid {
+			request.TargetID = targetIDNull.String
+		} else {
+			request.TargetID = ""
 		}
 		requests = append(requests, request)
 	}
