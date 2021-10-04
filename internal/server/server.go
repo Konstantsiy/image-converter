@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Konstantsiy/image-converter/pkg/logger"
+
 	"github.com/Konstantsiy/image-converter/internal/queue"
 
 	"github.com/Konstantsiy/image-converter/internal/appcontext"
@@ -25,6 +27,8 @@ const (
 	NeededSecurityScheme = "Bearer"
 
 	DefaultStatusCode = 200
+
+	IDQueryKey = "id"
 )
 
 // AuthRequest represents the user's authorization request.
@@ -82,14 +86,15 @@ func NewServer(repo *repository.Repository, tokenManager *jwt.TokenManager, stor
 
 // RegisterRoutes registers application routers.
 func (s *Server) RegisterRoutes(r *mux.Router) {
+	r.Use(s.LoggingMiddleware)
 	r.HandleFunc("/user/login", s.LogIn).Methods("POST")
 	r.HandleFunc("/user/signup", s.SignUp).Methods("POST")
 
 	api := r.NewRoute().Subrouter()
-	api.Use(s.AuthMiddleware)
 
+	api.Use(s.AuthMiddleware)
 	api.HandleFunc("/conversion", s.ConvertImage).Methods("POST")
-	api.HandleFunc("/images/{id}", s.DownloadImage).Methods("GET")
+	api.HandleFunc("/images", s.DownloadImage).Methods("GET")
 	api.HandleFunc("/requests", s.GetRequestsHistory).Methods("GET")
 }
 
@@ -114,16 +119,19 @@ func (s *Server) LogIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if ok, err := hash.ComparePasswords(user.Password, request.Password); !ok || err != nil {
+	if ok, err := hash.ComparePasswordHash(request.Password, user.Password); !ok || err != nil {
 		reportError(w, fmt.Errorf("invalid email or password"), http.StatusUnauthorized)
 		return
 	}
+
+	logger.Info(r.Context(), "login -> userID: "+user.ID)
 
 	accessToken, err := s.tokenManager.GenerateAccessToken(user.ID)
 	if err != nil {
 		reportError(w, fmt.Errorf("can't generate access token: %w", err), http.StatusInternalServerError)
 		return
 	}
+
 	refreshToken, err := s.tokenManager.GenerateRefreshToken()
 	if err != nil {
 		reportError(w, fmt.Errorf("can't generate refresh token: %w", err), http.StatusInternalServerError)
@@ -226,8 +234,13 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 
 // DownloadImage allows you to download original/converted image by id.
 func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+	id := r.URL.Query().Get(IDQueryKey)
+	if id == "" {
+		reportError(w, fmt.Errorf("id is missing in parameters"), http.StatusBadRequest)
+		return
+	}
+
+	logger.Info(r.Context(), "downloaded image id: "+id)
 
 	imageID, err := s.repo.GetImageIDInStore(id)
 	if errors.Is(err, repository.ErrNoSuchImage) {

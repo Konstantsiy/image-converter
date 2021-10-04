@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -43,25 +44,25 @@ func (s *Server) AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get(AuthorizationHeader)
 		if authHeader == "" {
-			http.Error(w, "empty auth handler", http.StatusUnauthorized)
+			reportError(w, fmt.Errorf("empty auth handler"), http.StatusUnauthorized)
 			return
 		}
 
 		authHeaderParts := strings.Split(authHeader, " ")
 		if len(authHeaderParts) != 2 || authHeaderParts[0] != NeededSecurityScheme {
-			http.Error(w, "invalid auth header", http.StatusUnauthorized)
+			reportError(w, fmt.Errorf("invalid auth handler"), http.StatusUnauthorized)
 			return
 		}
 
 		if len(authHeaderParts[1]) == 0 {
-			http.Error(w, "token is empty", http.StatusUnauthorized)
+			reportError(w, fmt.Errorf("token is empty"), http.StatusUnauthorized)
 			return
 		}
 
 		token := authHeaderParts[1]
 		claimsUserID, err := s.tokenManager.ParseToken(token)
 		if err != nil {
-			http.Error(w, "can't parse JWT", http.StatusUnauthorized)
+			reportError(w, fmt.Errorf("can't parse JWT: %w", err), http.StatusUnauthorized)
 			return
 		}
 
