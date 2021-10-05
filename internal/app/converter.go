@@ -13,21 +13,19 @@ import (
 )
 
 func StartListener() error {
+	setEnv()
 	conf, err := config.Load()
 	if err != nil {
 		return fmt.Errorf("can't load configs: %w", err)
 	}
-
-	logger.Info(context.Background(), fmt.Sprintf("configs:\nport: %s\nDB: %+v\nAWS: %+v\nJWT: %+v\nRabbit: %+v\n",
-		conf.AppPort, conf.DBConf, conf.AWSConf, conf.JWTConf, conf.RabbitMQConf))
 
 	db, err := repository.NewPostgresDB(conf.DBConf)
 	if err != nil {
 		return fmt.Errorf("can't connect to postgres database: %v", err)
 	}
 	defer db.Close()
-	logger.Info(context.Background(), fmt.Sprintf("database connected successfully (%s:%s)",
-		conf.DBConf.Host, conf.DBConf.Port))
+	logger.FromContext(context.Background()).WithField("host", conf.DBConf.Host).
+		Infoln("database connected successfully")
 
 	repo := repository.NewRepository(db)
 
@@ -35,19 +33,19 @@ func StartListener() error {
 	if err != nil {
 		return fmt.Errorf("can't create storage: %w", err)
 	}
-	logger.Info(context.Background(), "AWS S3 connected successfully")
+	logger.FromContext(context.Background()).Infoln("AWS S3 connected successfully")
 
 	consumer, err := queue.NewConsumer(repo, st, conf.RabbitMQConf)
 	if err != nil {
 		return fmt.Errorf("can't create consumer: %w", err)
 	}
-	logger.Info(context.Background(), "RabbitMQ client (consumer) initialized successfully")
+	logger.FromContext(context.Background()).Infoln("RabbitMQ client (consumer) initialized successfully")
 
 	err = consumer.Listen()
 	if err != nil {
 		return fmt.Errorf("can't start listening to the queue: %w", err)
 	}
-	logger.Info(context.Background(), "queue is listening")
+	logger.FromContext(context.Background()).Infoln("queue is listening")
 
 	return nil
 }

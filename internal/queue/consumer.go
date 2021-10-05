@@ -44,19 +44,23 @@ func (c *Consumer) Listen() error {
 
 	for {
 		msg := <-msgChannel
+		logger.FromContext(context.Background()).Infoln("message received from queue")
 		go func() {
+			logger.FromContext(context.Background()).Infoln("message processing...")
 			err := c.consumeFromQueue(&msg)
 			if err != nil {
 				nErr := msg.Nack(true, false)
 				if nErr != nil {
-					logger.Error(context.Background(), fmt.Errorf("can't make negative acknowledgement: %w, (original error: %v)", nErr, err))
+					logger.FromContext(context.Background()).
+						Errorln(fmt.Errorf("can't make negative acknowledgement: %w, (original error: %v)", nErr, err))
 				}
 				return
 			}
 			aErr := msg.Ack(false)
 			if aErr != nil {
-				logger.Error(context.Background(), fmt.Errorf("can't make acknowledgement: %w", aErr))
+				logger.FromContext(context.Background()).Errorln(fmt.Errorf("can't make acknowledgement: %w", aErr))
 			}
+			logger.FromContext(context.Background()).Infoln("message processed successfully")
 		}()
 	}
 }
@@ -73,9 +77,9 @@ func (c *Consumer) consumeFromQueue(msg *amqp.Delivery) error {
 	if err != nil {
 		uErr := c.repo.UpdateRequest(data.RequestID, repository.RequestStatusFailed, "")
 		if uErr != nil {
-			logger.Error(context.Background(), fmt.Errorf("can't update request with id %s: %w, (original error: %v)", data.RequestID, err, err))
+			logger.FromContext(context.Background()).WithField("request_id", data.RequestID).
+				Errorln(fmt.Errorf("can't update request: %w, (original error: %v)", err, err))
 		}
-
 		return fmt.Errorf("error processing a message from the queue: %w", err)
 	}
 
@@ -88,31 +92,43 @@ func (c *Consumer) process(data queueMessage) error {
 	if err != nil {
 		return fmt.Errorf("storage error: %w", err)
 	}
+	logger.FromContext(context.Background()).WithField("file_id", data.FileID).
+		Infoln("original file successfully downloaded from the S3 storage")
 
 	targetFile, err := converter.Convert(sourceFile, data.TargetFormat, data.Ratio)
 	if err != nil {
 		return fmt.Errorf("converter error: %w", err)
 	}
+	logger.FromContext(context.Background()).WithField("file_id", data.FileID).
+		Infoln("converter successfully processed the original file")
 
 	err = c.repo.UpdateRequest(data.RequestID, repository.RequestStatusProcessing, "")
 	if err != nil {
 		return fmt.Errorf("can't update request with id %s: %w", data.RequestID, err)
 	}
+	logger.FromContext(context.Background()).WithField("request_id", data.RequestID).
+		Infoln("request updated to the status \"processing\"")
 
 	targetFileID, err := c.repo.InsertImage(data.Filename, data.TargetFormat)
 	if err != nil {
 		return fmt.Errorf("repository error: %w", err)
 	}
+	logger.FromContext(context.Background()).WithField("file_id", targetFileID).
+		Infoln("converted file successfully saved in the database")
 
 	err = c.storage.UploadFile(targetFile, targetFileID)
 	if err != nil {
 		return fmt.Errorf("storage error: %w", err)
 	}
+	logger.FromContext(context.Background()).WithField("file_id", targetFileID).
+		Infoln("converted file successfully uploaded to the S3 storage")
 
 	err = c.repo.UpdateRequest(data.RequestID, repository.RequestStatusDone, targetFileID)
 	if err != nil {
 		return fmt.Errorf("request updating error: %w", err)
 	}
+	logger.FromContext(context.Background()).WithField("request_id", data.RequestID).
+		Infoln("request updated to the status \"done\"")
 
 	return nil
 }

@@ -12,6 +12,7 @@ import (
 func main() {
 	err := app.StartListener()
 	if err != nil {
-		logger.Error(context.Background(), fmt.Errorf("failed to start converter: %v", err))
+		logger.FromContext(context.Background()).
+			Errorln(fmt.Errorf("failed to start converter: %v", err))
 	}
 }

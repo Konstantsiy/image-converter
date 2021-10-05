@@ -83,14 +83,12 @@ func (tm *TokenManager) ParseToken(accessToken string) (string, error) {
 		return "", fmt.Errorf("can't parse token: %w", err)
 	}
 
-	logger.Info(context.Background(), "token is valid")
+	logger.FromContext(context.Background()).Infoln("token is valid")
 
 	claims, ok := token.Claims.(*jwt.StandardClaims)
 	if !ok {
 		return "", fmt.Errorf("can't get user claims from token")
 	}
-
-	logger.Info(context.Background(), "token -> userID: "+claims.Subject)
 
 	return claims.Subject, nil
 }

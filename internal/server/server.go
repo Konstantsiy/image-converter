@@ -124,7 +124,7 @@ func (s *Server) LogIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.Info(r.Context(), "login -> userID: "+user.ID)
+	logger.FromContext(r.Context()).WithField("user_id", user.ID).Infoln("user successfully logged in")
 
 	accessToken, err := s.tokenManager.GenerateAccessToken(user.ID)
 	if err != nil {
@@ -210,18 +210,24 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 		reportError(w, fmt.Errorf("repository error: %w", err), http.StatusInternalServerError)
 		return
 	}
+	logger.FromContext(r.Context()).WithField("file_id", sourceFileID).
+		Infoln("original file successfully saved in the database")
 
 	err = s.storage.UploadFile(sourceFile, sourceFileID)
 	if err != nil {
 		reportError(w, fmt.Errorf("storage error: %w", err), http.StatusInternalServerError)
 		return
 	}
+	logger.FromContext(r.Context()).WithField("file_id", sourceFileID).
+		Infoln("original file successfully uploaded to the S3 storage")
 
 	requestID, err := s.repo.MakeRequest(userID, sourceFileID, sourceFormat, targetFormat, ratio)
 	if err != nil {
 		reportError(w, fmt.Errorf("repository error: %w", err), http.StatusInternalServerError)
 		return
 	}
+	logger.FromContext(r.Context()).WithField("request_id", requestID).
+		Infoln("request created with the status \"queued\"")
 
 	sendResponse(w, ConvertResponse{RequestID: requestID}, http.StatusAccepted)
 
@@ -230,6 +236,7 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 		reportError(w, fmt.Errorf("can't send data to queue: %w", err), http.StatusInternalServerError)
 		return
 	}
+	logger.FromContext(r.Context()).Infoln("message has been sent to the queue")
 }
 
 // DownloadImage allows you to download original/converted image by id.
@@ -240,7 +247,7 @@ func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.Info(r.Context(), "downloaded image id: "+id)
+	logger.FromContext(r.Context()).WithField("file_id", id).Infoln("get file_id from the URL")
 
 	imageID, err := s.repo.GetImageIDInStore(id)
 	if errors.Is(err, repository.ErrNoSuchImage) {

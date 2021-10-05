@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/Konstantsiy/image-converter/pkg/logger"
 
@@ -18,25 +19,44 @@ import (
 	"github.com/gorilla/mux"
 )
 
+func setEnv() {
+	os.Setenv("APP_PORT", "8080")
+
+	os.Setenv("DB_USER", "postgres")
+	os.Setenv("DB_PASSWORD", "password")
+	os.Setenv("DB_NAME", "postgres")
+	os.Setenv("DB_HOST", "localhost")
+	os.Setenv("DB_PORT", "5432")
+	os.Setenv("DB_SSL_MODE", "disable")
+
+	os.Setenv("JWT_PRIVATE_KEY_PATH", "./rsa_keys/private.pem")
+	os.Setenv("JWT_PUBLIC_KEY_PATH", "./rsa_keys/public.pem")
+
+	os.Setenv("AWS_REGION", "eu-central-1")
+	os.Setenv("AWS_ACCESS_KEY_ID", "AKIAUTWMM3GR4BUJVGPS")
+	os.Setenv("AWS_SECRET_ACCESS_KEY", "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")
+	os.Setenv("AWS_BUCKET_NAME", "name1234")
+
+	os.Setenv("RABBITMQ_QUEUE_NAME", "new_queue")
+	os.Setenv("RABBITMQ_AMQP_CONNECTION_URL", "amqp://guest:guest@localhost:5672/")
+}
+
 // Start starts the application server.
 func Start() error {
 	r := mux.NewRouter()
-
+	setEnv()
 	conf, err := config.Load()
 	if err != nil {
 		return fmt.Errorf("can't load configs: %w", err)
 	}
-
-	logger.Info(context.Background(), fmt.Sprintf("configs:\nport: %s\nDB: %+v\nAWS: %+v\nJWT: %+v\nRabbit: %+v\n",
-		conf.AppPort, conf.DBConf, conf.AWSConf, conf.JWTConf, conf.RabbitMQConf))
 
 	db, err := repository.NewPostgresDB(conf.DBConf)
 	if err != nil {
 		return fmt.Errorf("can't connect to postgres database: %v", err)
 	}
 	defer db.Close()
-	logger.Info(context.Background(), fmt.Sprintf("database connected successfully (%s:%s)",
-		conf.DBConf.Host, conf.DBConf.Port))
+	logger.FromContext(context.Background()).WithField("host", conf.DBConf.Host).
+		Infoln("database connected successfully")
 
 	repo := repository.NewRepository(db)
 
@@ -44,19 +64,19 @@ func Start() error {
 	if err != nil {
 		return fmt.Errorf("token manager error: %w", err)
 	}
-	logger.Info(context.Background(), "JWT-manager created successfully")
+	logger.FromContext(context.Background()).Infoln("JWT-manager created successfully")
 
 	st, err := storage.NewStorage(conf.AWSConf)
 	if err != nil {
 		return fmt.Errorf("can't create storage: %v", err)
 	}
-	logger.Info(context.Background(), "AWS S3 connected successfully")
+	logger.FromContext(context.Background()).Infoln("AWS S3 connected successfully")
 
 	producer, err := queue.NewProducer(conf.RabbitMQConf)
 	if err != nil {
 		return fmt.Errorf("can't create producer: %w", err)
 	}
-	logger.Info(context.Background(), "RabbitMQ client (producer) initialized successfully")
+	logger.FromContext(context.Background()).Infoln("RabbitMQ client (producer) initialized successfully")
 
 	s := server.NewServer(repo, tokenManager, st, producer)
 	s.RegisterRoutes(r)
