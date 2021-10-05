@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/Konstantsiy/image-converter/pkg/logger"
 
@@ -19,32 +18,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func setEnv() {
-	os.Setenv("APP_PORT", "8080")
-
-	os.Setenv("DB_USER", "postgres")
-	os.Setenv("DB_PASSWORD", "password")
-	os.Setenv("DB_NAME", "postgres")
-	os.Setenv("DB_HOST", "localhost")
-	os.Setenv("DB_PORT", "5432")
-	os.Setenv("DB_SSL_MODE", "disable")
-
-	os.Setenv("JWT_PRIVATE_KEY_PATH", "./rsa_keys/private.pem")
-	os.Setenv("JWT_PUBLIC_KEY_PATH", "./rsa_keys/public.pem")
-
-	os.Setenv("AWS_REGION", "eu-central-1")
-	os.Setenv("AWS_ACCESS_KEY_ID", "AKIAUTWMM3GR4BUJVGPS")
-	os.Setenv("AWS_SECRET_ACCESS_KEY", "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")
-	os.Setenv("AWS_BUCKET_NAME", "name1234")
-
-	os.Setenv("RABBITMQ_QUEUE_NAME", "new_queue")
-	os.Setenv("RABBITMQ_AMQP_CONNECTION_URL", "amqp://guest:guest@localhost:5672/")
-}
-
 // Start starts the application server.
 func Start() error {
 	r := mux.NewRouter()
-	setEnv()
+
 	conf, err := config.Load()
 	if err != nil {
 		return fmt.Errorf("can't load configs: %w", err)

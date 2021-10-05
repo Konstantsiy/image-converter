@@ -13,7 +13,6 @@ import (
 )
 
 func StartListener() error {
-	setEnv()
 	conf, err := config.Load()
 	if err != nil {
 		return fmt.Errorf("can't load configs: %w", err)
