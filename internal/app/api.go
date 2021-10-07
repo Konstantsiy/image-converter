@@ -32,7 +32,8 @@ func Start() error {
 		return fmt.Errorf("can't connect to postgres database: %v", err)
 	}
 	defer db.Close()
-	logger.FromContext(context.Background()).WithField("host", conf.DBConf.Host).
+	logger.FromContext(context.Background()).
+		WithField("host", conf.DBConf.Host).WithField("port", conf.DBConf.Port).
 		Infoln("database connected successfully")
 
 	repo := repository.NewRepository(db)

@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"time"
 
 	"github.com/Konstantsiy/image-converter/pkg/logger"
@@ -26,12 +27,20 @@ type TokenManager struct {
 }
 
 func NewTokenManager(conf *config.JWTConfig) (*TokenManager, error) {
-	privateKey, err := ioutil.ReadFile(conf.PrivateKeyPath)
+	curDir, err := os.Getwd()
+	if err != nil {
+		return nil, fmt.Errorf("can't get currend directory path: %w", err)
+	}
+
+	logger.FromContext(context.Background()).WithField("cur_dir", curDir).
+		Infoln("getting current dir path")
+
+	privateKey, err := ioutil.ReadFile(curDir + conf.PrivateKeyPath)
 	if err != nil {
 		return nil, fmt.Errorf("can't read private key form file: %w", err)
 	}
 
-	publicKey, err := ioutil.ReadFile(conf.PublicKeyPath)
+	publicKey, err := ioutil.ReadFile(curDir + conf.PublicKeyPath)
 	if err != nil {
 		return nil, fmt.Errorf("can't read public key form file: %w", err)
 	}
