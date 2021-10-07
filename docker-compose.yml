@@ -11,8 +11,6 @@ services:
     volumes:
       - ./scripts/create_db.sql:/docker-entrypoint-initdb.d/create_db.sql
       - ./data:/var/lib/postgresql/data/
-  #    networks:
-  #      - app_default
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
@@ -27,8 +25,6 @@ services:
     volumes:
       - ./docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
       - ./docker-conf/rabbitmq/log/:/var/log/rabbitmq
-  #    networks:
-  #      - app_default
 
   api:
     build:
@@ -40,8 +36,6 @@ services:
       - "8080:8080"
     env_file: .env
     restart: always
-    #    networks:
-    #      - app_default
     depends_on:
       - postgresql
       - rabbitmq
@@ -54,8 +48,6 @@ services:
     hostname: "converter.local"
     env_file: .env
     restart: always
-    #    networks:
-    #      - app_default
     depends_on:
       - api
       - postgresql
@@ -65,6 +57,3 @@ volumes:
   postgresql:
     driver: local
   database-data:
-#networks:
-#  app_default:
-#    driver: bridge
