@@ -32,9 +32,6 @@ func NewTokenManager(conf *config.JWTConfig) (*TokenManager, error) {
 		return nil, fmt.Errorf("can't get currend directory path: %w", err)
 	}
 
-	logger.FromContext(context.Background()).WithField("cur_dir", curDir).
-		Infoln("getting current dir path")
-
 	privateKey, err := ioutil.ReadFile(curDir + conf.PrivateKeyPath)
 	if err != nil {
 		return nil, fmt.Errorf("can't read private key form file: %w", err)
