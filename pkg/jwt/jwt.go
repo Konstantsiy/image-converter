@@ -29,7 +29,7 @@ type TokenManager struct {
 func NewTokenManager(conf *config.JWTConfig) (*TokenManager, error) {
 	curDir, err := os.Getwd()
 	if err != nil {
-		return nil, fmt.Errorf("can't get currend directory path: %w", err)
+		return nil, fmt.Errorf("can't get current directory path: %w", err)
 	}
 
 	privateKey, err := ioutil.ReadFile(curDir + conf.PrivateKeyPath)

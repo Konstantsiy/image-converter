@@ -10,14 +10,12 @@ COPY go.sum .
 RUN go mod download
 
 COPY . .
-RUN ls -la ./rsa_keys
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o api_main ./cmd/api/main.go
 
 FROM alpine:latest
 
 COPY ./rsa_keys /app/rsa_keys
-RUN ls -la /app
 
 RUN apk --no-cache add ca-certificates
 
