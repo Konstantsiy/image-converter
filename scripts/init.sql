@@ -1,8 +1,8 @@
-select 'create database ita'
-where not exists(select from pg_database where datname = 'ita');
+select 'create database project'
+where not exists(select from pg_database where datname = 'project');
 \gexec
 
-\c ita
+\c project
 
 create schema if not exists converter;
 
