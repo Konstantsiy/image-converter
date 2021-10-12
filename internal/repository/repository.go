@@ -3,34 +3,26 @@ package repository
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/lib/pq"
 )
 
-var (
-	ErrNoSuchUser        = errors.New("the user with this email does not exist")
-	ErrNoSuchImage       = errors.New("the image with this id does not exist")
-	ErrUserAlreadyExists = errors.New("the user with the given email already exists")
-	ErrNoSuchRequest     = errors.New("request with the given id does not exists")
-)
+//var (
+//	ErrNoSuchUser        = errors.New("the user with this email does not exist")
+//	ErrNoSuchImage       = errors.New("the image with this id does not exist")
+//	ErrUserAlreadyExists = errors.New("the user with the given email already exists")
+//	ErrNoSuchRequest     = errors.New("request with the given id does not exists")
+//)
 
 const (
-	uniqueViolationCode = "23505"
+//uniqueViolationCode = "23505"
 
-	RequestStatusProcessing = "processing"
-	RequestStatusFailed     = "failed"
-	RequestStatusDone       = "done"
+//RequestStatusProcessing = "processing"
+//RequestStatusFailed     = "failed"
+//RequestStatusDone       = "done"
 )
-
-// User represents the user in the database.
-type User struct {
-	ID       string
-	Email    string
-	Password string
-}
 
 // ConversionRequest represents conversion request in the database.
 type ConversionRequest struct {
