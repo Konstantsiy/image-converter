@@ -27,25 +27,26 @@ func StartListener() error {
 		WithField("host", conf.DBConf.Host).WithField("port", conf.DBConf.Port).
 		Infoln("database connected successfully")
 
-	repo := repository.NewRepository(db)
-
 	st, err := storage.NewStorage(conf.AWSConf)
 	if err != nil {
 		return fmt.Errorf("can't create storage: %w", err)
 	}
 	logger.FromContext(context.Background()).Infoln("AWS S3 connected successfully")
 
-	consumer, err := queue.NewConsumer(repo, st, conf.RabbitMQConf)
+	imageRepo := repository.NewImagesRepository(db)
+	requestsRepo := repository.NewRequestsRepository(db)
+
+	consumer, err := queue.NewConsumer(requestsRepo, imageRepo, st, conf.RabbitMQConf)
 	if err != nil {
 		return fmt.Errorf("can't create consumer: %w", err)
 	}
 	logger.FromContext(context.Background()).Infoln("RabbitMQ client (consumer) initialized successfully")
 
+	logger.FromContext(context.Background()).Infoln("queue is listening")
 	err = consumer.Listen()
 	if err != nil {
 		return fmt.Errorf("can't start listening to the queue: %w", err)
 	}
-	logger.FromContext(context.Background()).Infoln("queue is listening")
 
 	return nil
 }

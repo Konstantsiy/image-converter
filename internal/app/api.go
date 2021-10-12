@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/Konstantsiy/image-converter/internal/service"
+
 	"github.com/Konstantsiy/image-converter/pkg/logger"
 
 	"github.com/Konstantsiy/image-converter/internal/queue"
@@ -32,11 +34,10 @@ func Start() error {
 		return fmt.Errorf("can't connect to postgres database: %v", err)
 	}
 	defer db.Close()
+
 	logger.FromContext(context.Background()).
 		WithField("host", conf.DBConf.Host).WithField("port", conf.DBConf.Port).
 		Infoln("database connected successfully")
-
-	repo := repository.NewRepository(db)
 
 	tokenManager, err := jwt.NewTokenManager(conf.JWTConf)
 	if err != nil {
@@ -56,7 +57,15 @@ func Start() error {
 	}
 	logger.FromContext(context.Background()).Infoln("RabbitMQ client (producer) initialized successfully")
 
-	s := server.NewServer(repo, tokenManager, st, producer)
+	usersRepo := repository.NewUsersRepository(db)
+	imageRepo := repository.NewImagesRepository(db)
+	requestsRepo := repository.NewRequestsRepository(db)
+
+	authService := service.NewAuthService(usersRepo, tokenManager)
+	imagesService := service.NewImageService(imageRepo, requestsRepo, st, producer)
+	requestsService := service.NewRequestsService(requestsRepo)
+
+	s := server.NewServer(authService, imagesService, requestsService)
 	s.RegisterRoutes(r)
 
 	return http.ListenAndServe(":"+conf.AppPort, r)
