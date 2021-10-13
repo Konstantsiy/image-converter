@@ -65,7 +65,7 @@ func Start() error {
 	imagesService := service.NewImageService(imageRepo, requestsRepo, st, producer)
 	requestsService := service.NewRequestsService(requestsRepo)
 
-	s := server.NewServer(authService, imagesService, requestsService)
+	s := server.NewServer(authService, imagesService, requestsService, producer)
 	s.RegisterRoutes(r)
 
 	return http.ListenAndServe(":"+conf.AppPort, r)

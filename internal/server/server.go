@@ -174,7 +174,7 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get(IDQueryKey)
 	if id == "" {
-		reportErrorWithCode(w, fmt.Errorf("id is missing in parameters"), http.StatusBadRequest)
+		reportErrorWithCode(w, fmt.Errorf("image id is missing in parameters"), http.StatusBadRequest)
 		return
 	}
 
@@ -189,7 +189,7 @@ func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
 
 // GetRequestsHistory displays the user's request history.
 func (s *Server) GetRequestsHistory(w http.ResponseWriter, r *http.Request) {
-	requests, err := s.requestsService.GetRequests(r.Context())
+	requests, err := s.requestsService.GetUsersRequests(r.Context())
 	if err != nil {
 		reportError(w, err)
 		return

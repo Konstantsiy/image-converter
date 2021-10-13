@@ -65,7 +65,12 @@ func (is *ImageService) Convert(ctx context.Context, sourceFile multipart.File, 
 
 // Download allows you to download original/converted image by id.
 func (is *ImageService) Download(ctx context.Context, id string) (string, error) {
-	imageID, err := is.imagesRepo.GetImageIDInStore(ctx, id)
+	userID, ok := appcontext.UserIDFromContext(ctx)
+	if !ok {
+		return "", fmt.Errorf("can't get user id from application context")
+	}
+
+	imageID, err := is.imagesRepo.GetImageIDByUserID(ctx, userID, id)
 	if errors.Is(err, repository.ErrNoSuchImage) {
 		return "", &ServiceError{err, http.StatusNotFound}
 	}

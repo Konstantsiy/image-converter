@@ -18,8 +18,8 @@ func NewRequestsService(requestsRepo *repository.RequestsRepository) *RequestsSe
 	return &RequestsService{requestsRepo: requestsRepo}
 }
 
-// GetRequests displays the user's request history.
-func (rs *RequestsService) GetRequests(ctx context.Context) ([]repository.ConversionRequest, error) {
+// GetUsersRequests displays the user's request history.
+func (rs *RequestsService) GetUsersRequests(ctx context.Context) ([]repository.ConversionRequest, error) {
 	userID, ok := appcontext.UserIDFromContext(ctx)
 	if !ok {
 		return nil, &ServiceError{

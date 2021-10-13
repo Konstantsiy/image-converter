@@ -23,9 +23,9 @@ type Authorization interface {
 
 type Images interface {
 	Convert(ctx context.Context, filename, sourceFormat, targetFormat, ratio string) (string, string, error)
-	Download(ctx context.Context, id string) (string, error)
+	Download(ctx context.Context, userID, imageID string) (string, error)
 }
 
 type Requests interface {
-	GetRequests(ctx context.Context) ([]repository.ConversionRequest, error)
+	GetUsersRequests(ctx context.Context) ([]repository.ConversionRequest, error)
 }
