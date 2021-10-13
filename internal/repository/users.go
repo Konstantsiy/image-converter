@@ -63,3 +63,7 @@ func (ur *UsersRepository) GetUserByEmail(ctx context.Context, email string) (Us
 
 	return user, nil
 }
+
+func (ur *UsersRepository) FindRequestByUserAndImage(ctx context.Context, userID, imageID string) {
+
+}

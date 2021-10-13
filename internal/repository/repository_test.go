@@ -1,27 +1,32 @@
 package repository
 
-import (
-	"database/sql"
-	"testing"
-
-	"github.com/DATA-DOG/go-sqlmock"
-)
-
-// NewMock creates new sqlmock instance.
-func NewMock(t *testing.T) (*sql.DB, sqlmock.Sqlmock) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Errorf("an error '%v' was not expected when opening a stub database connection", err)
-	}
-
-	return db, mock
-}
-
+//
+//import (
+//	"database/sql"
+//	"errors"
+//	"testing"
+//
+//	"github.com/DATA-DOG/go-sqlmock"
+//	"github.com/gofrs/uuid"
+//	//"github.com/gofrs/uuid"
+//	"github.com/lib/pq"
+//)
+//
+////// NewMock creates new sqlmock instance.
+////func NewMock(t *testing.T) (*sql.DB, sqlmock.Sqlmock) {
+////	db, mock, err := sqlmock.New()
+////	if err != nil {
+////		t.Errorf("an error '%v' was not expected when opening a stub database connection", err)
+////	}
+////
+////	return db, mock
+////}
+//
 //func TestRepository_InsertUser(t *testing.T) {
 //	db, mock := NewMock(t)
 //	defer db.Close()
 //
-//	type args struct {
+//	type input struct {
 //		email    string
 //		password string
 //	}
@@ -31,31 +36,31 @@ func NewMock(t *testing.T) (*sql.DB, sqlmock.Sqlmock) {
 //
 //	testTable := []struct {
 //		name           string
-//		args           args
+//		input          input
 //		expectedUserID string
 //		expectedError  error
-//		mockBehavior   func(args, string)
+//		mockBehavior   func(input, string)
 //	}{
 //		{
 //			name: "Ok",
-//			args: args{
+//			input: input{
 //				email:    "email2",
 //				password: "password2",
 //			},
 //			expectedUserID: uuid.NewV4().String(),
 //			expectedError:  nil,
-//			mockBehavior: func(args args, userID string) {
+//			mockBehavior: func(input input, userID string) {
 //				mock.ExpectQuery(query).
-//					WithArgs(args.email, args.password).
+//					WithArgs(input.email, input.password).
 //					WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(userID))
 //			},
 //		},
 //		{
 //			name:          "User already exists",
 //			expectedError: ErrUserAlreadyExists,
-//			mockBehavior: func(args args, userID string) {
+//			mockBehavior: func(input input, userID string) {
 //				mock.ExpectQuery(query).
-//					WithArgs(args.email, args.password).
+//					WithArgs(input.email, input.password).
 //					WillReturnError(&pq.Error{Code: uniqueViolationCode})
 //			},
 //		},
@@ -63,9 +68,9 @@ func NewMock(t *testing.T) (*sql.DB, sqlmock.Sqlmock) {
 //
 //	for _, tc := range testTable {
 //		t.Run(tc.name, func(t *testing.T) {
-//			tc.mockBehavior(tc.args, tc.expectedUserID)
+//			tc.mockBehavior(tc.input, tc.expectedUserID)
 //
-//			resultUserID, err := repo.InsertUser(tc.args.email, tc.args.password)
+//			resultUserID, err := repo.InsertUser(tc.input.email, tc.input.password)
 //			if !errors.Is(err, tc.expectedError) {
 //				t.Errorf("expected error to be %v, but got %v", tc.expectedError, err)
 //			}

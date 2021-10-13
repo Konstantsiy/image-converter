@@ -10,11 +10,11 @@ type Users interface {
 
 type Images interface {
 	InsertImage(ctx context.Context, filename, format string) (string, error)
-	GetImageIDInStore(ctx context.Context, id string) (string, error)
+	GetImageIDByUserID(ctx context.Context, id string) (string, error)
 }
 
 type Requests interface {
-	GetRequestsByUserID(ctx context.Context, userID string) ([]ConversionRequest, error)
 	InsertRequest(ctx context.Context, userID, sourceID, sourceFormat, targetFormat string, ratio int) (string, error)
+	GetRequestsByUserID(ctx context.Context, userID string) ([]ConversionRequest, error)
 	UpdateRequest(ctx context.Context, requestID, status, targetID string) error
 }

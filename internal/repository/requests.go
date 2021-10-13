@@ -6,11 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
-	"github.com/Konstantsiy/image-converter/pkg/logger"
 )
 
-var ErrNoSuchRequest = errors.New("request with the given id does not exists")
+var ErrNoSuchRequest = errors.New("request with this id does not exists")
 
 const (
 	RequestStatusProcessing = "processing"
@@ -39,6 +37,22 @@ type RequestsRepository struct {
 
 func NewRequestsRepository(db *sql.DB) *RequestsRepository {
 	return &RequestsRepository{db: db}
+}
+
+// InsertRequest creates the conversion request and returns its id.
+func (rr *RequestsRepository) InsertRequest(ctx context.Context, userID, sourceID, sourceFormat, targetFormat string, ratio int) (string, error) {
+	var requestID string
+	const query = `insert into converter.requests 
+		(user_id, source_id, target_id, source_format, target_format, ratio, status)
+		values ($1, $2, NULL, $3, $4, $5, 'queued') 
+		returning id;`
+
+	err := rr.db.QueryRowContext(ctx, query, userID, sourceID, sourceFormat, targetFormat, ratio).Scan(&requestID)
+	if err != nil {
+		return "", fmt.Errorf("can't make request: %w", err)
+	}
+
+	return requestID, nil
 }
 
 // GetRequestsByUserID gets the information about requests by given user id.
@@ -83,29 +97,6 @@ func (rr *RequestsRepository) GetRequestsByUserID(ctx context.Context, userID st
 	}
 
 	return requests, nil
-}
-
-// InsertRequest creates the conversion request and returns its id.
-func (rr *RequestsRepository) InsertRequest(ctx context.Context, userID, sourceID, sourceFormat, targetFormat string, ratio int) (string, error) {
-	var requestID string
-
-	const query = `insert into converter.requests 
-		(user_id, source_id, target_id, source_format, target_format, ratio, status)
-		values ($1, $2, NULL, $3, $4, $5, 'queued') 
-		returning id;`
-
-	err := rr.db.QueryRowContext(ctx, query, userID, sourceID, sourceFormat, targetFormat, ratio).Scan(&requestID) // todo
-	switch {
-	case err == sql.ErrNoRows:
-		logger.FromContext(ctx).Infoln("--- no request")
-	case err != nil:
-		logger.FromContext(ctx).Infoln("--- query error: " + err.Error())
-	}
-	if err != nil {
-		return "", fmt.Errorf("can't make request: %w", err)
-	}
-
-	return requestID, nil
 }
 
 // UpdateRequest updates the request status and the id of the target image.

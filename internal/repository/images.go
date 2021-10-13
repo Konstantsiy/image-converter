@@ -31,12 +31,16 @@ func (ir *ImagesRepository) InsertImage(ctx context.Context, filename, format st
 	return imageID, nil
 }
 
-// GetImageIDInStore returns the image id to the storage.
-func (ir *ImagesRepository) GetImageIDInStore(ctx context.Context, id string) (string, error) {
-	var imageID string
-	const query = "select id from converter.images where id=$1;"
+// GetImageIDByUserID returns the image id to the storage.
+func (ir *ImagesRepository) GetImageIDByUserID(ctx context.Context, userID, imageID string) (string, error) {
+	var resImageID string
+	const query = `select i.id from converter.requests r
+    	join converter.images i
+    	on i.id = $2
+    	and (r.source_id = i.id or r.target_id = i.id)
+    	and r.user_id = $1;`
 
-	err := ir.db.QueryRowContext(ctx, query, id).Scan(&imageID)
+	err := ir.db.QueryRowContext(ctx, query, userID, imageID).Scan(&resImageID)
 	if err == sql.ErrNoRows {
 		return "", ErrNoSuchImage
 	}
