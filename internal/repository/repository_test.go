@@ -70,7 +70,7 @@ package repository
 //		t.Run(tc.name, func(t *testing.T) {
 //			tc.mockBehavior(tc.input, tc.expectedUserID)
 //
-//			resultUserID, err := repo.InsertUser(tc.input.email, tc.input.password)
+//			resultUserID, err := repo.LogIn(tc.input.email, tc.input.password)
 //			if !errors.Is(err, tc.expectedError) {
 //				t.Errorf("expected error to be %v, but got %v", tc.expectedError, err)
 //			}
@@ -132,7 +132,7 @@ package repository
 //		t.Run(tc.name, func(t *testing.T) {
 //			tc.mockBehavior(tc.email, tc.expectedUser)
 //
-//			resultUser, err := repo.GetUserByEmail(tc.email)
+//			resultUser, err := repo.SignUp(tc.email)
 //			if !errors.Is(err, tc.expectedError) {
 //				t.Errorf("expected error to be %v, but got %v", tc.expectedError, err)
 //			}
