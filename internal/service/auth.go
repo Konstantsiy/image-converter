@@ -21,6 +21,10 @@ func NewAuthService(repo *repository.UsersRepository, tm *jwt.TokenManager) *Aut
 	return &AuthService{usersRepo: repo, tm: tm}
 }
 
+func (auth *AuthService) ParseToken(accessToken string) (string, error) {
+	return auth.tm.ParseToken(accessToken)
+}
+
 func (auth *AuthService) LogIn(ctx context.Context, email, password string) (string, string, error) {
 	user, err := auth.usersRepo.GetUserByEmail(ctx, email)
 	if err == repository.ErrNoSuchUser {
@@ -79,8 +83,4 @@ func (auth *AuthService) SignUp(ctx context.Context, email, password string) (st
 	}
 
 	return userID, nil
-}
-
-func (auth *AuthService) ParseToken(accessToken string) (string, error) {
-	return auth.tm.ParseToken(accessToken)
 }
