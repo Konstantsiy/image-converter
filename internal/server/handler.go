@@ -50,13 +50,13 @@ type DownloadResponse struct {
 
 // Server represents application server.
 type Server struct {
-	authService     *service.AuthService
-	imageService    *service.ImageService
-	requestsService *service.RequestsService
+	authService     service.Authorization
+	imageService    service.Images
+	requestsService service.Requests
 	producer        *queue.Producer
 }
 
-func NewServer(authService *service.AuthService, imageService *service.ImageService, requestsService *service.RequestsService, producer *queue.Producer) *Server {
+func NewServer(authService service.Authorization, imageService service.Images, requestsService service.Requests, producer *queue.Producer) *Server {
 	return &Server{
 		authService:     authService,
 		imageService:    imageService,
