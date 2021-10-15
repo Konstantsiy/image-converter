@@ -9,13 +9,10 @@ import (
 
 	"github.com/Konstantsiy/image-converter/internal/service"
 
-	"github.com/stretchr/testify/assert"
-
-	"github.com/gorilla/mux"
-
 	mockservice "github.com/Konstantsiy/image-converter/internal/service/mock"
-
 	"github.com/golang/mock/gomock"
+	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestServer_LogIn(t *testing.T) {
@@ -48,35 +45,16 @@ func TestServer_LogIn(t *testing.T) {
 			expectedResponseBody: `{"access_token":"token1","refresh_token":"token2"}`,
 		},
 		{
-			name:        "Invalid input",
-			requestBody: `{"email": "","password": "password112"}`,
+			name:        "Empty field",
+			requestBody: `{"email": "","password": "Password1"}`,
 			request: request{
-				email:    "email112@gmail.com",
-				password: "password112",
+				email:    "email1@gmail.com",
+				password: "Password1",
 			},
-			mockBehavior: func(s *mockservice.MockAuthorization, req request) {
-				s.EXPECT().
-					LogIn(gomock.Any(), req.email, req.password).
-					Return("", "", service.ErrInvalidParam)
-			},
-			expectedStatusCode:   http.StatusUnauthorized,
-			expectedResponseBody: "invalid email or password\n",
+			mockBehavior:         func(s *mockservice.MockAuthorization, req request) {},
+			expectedStatusCode:   http.StatusBadRequest,
+			expectedResponseBody: "empty field\n",
 		},
-		//{
-		//	name:        "Can't generate token access token",
-		//	requestBody: `{"email": "email1@gmail.com","password": "password1"}`,
-		//	request: request{
-		//		email:    "email1@gmail.com",
-		//		password: "password1",
-		//	},
-		//	mockBehavior: func(s *mockservice.MockAuthorization, req request) {
-		//		s.EXPECT().
-		//			LogIn(gomock.Any(), req.email, req.password).
-		//			Return("token1", "token2")
-		//	},
-		//	expectedStatusCode:   http.StatusInternalServerError,
-		//	expectedResponseBody: `"":"token1","refresh_token":"token2"}`,
-		//},
 	}
 
 	for _, tc := range testTable {
@@ -87,7 +65,7 @@ func TestServer_LogIn(t *testing.T) {
 			auth := mockservice.NewMockAuthorization(c)
 			tc.mockBehavior(auth, tc.request)
 
-			s := Server{auth, nil, nil, nil}
+			s := Server{authService: auth}
 
 			r := mux.NewRouter()
 			r.HandleFunc("/user/login", s.LogIn).Methods("POST")
@@ -244,7 +222,7 @@ func TestServer_SignUp(t *testing.T) {
 			auth := mockservice.NewMockAuthorization(c)
 			tc.mockBehavior(auth, tc.request)
 
-			s := Server{auth, nil, nil, nil}
+			s := Server{authService: auth}
 
 			r := mux.NewRouter()
 			r.HandleFunc("/user/signup", s.SignUp).Methods("POST")
@@ -258,4 +236,8 @@ func TestServer_SignUp(t *testing.T) {
 			assert.Equal(t, tc.expectedResponseBody, w.Body.String())
 		})
 	}
+}
+
+func TestServer_ConvertImage(t *testing.T) {
+
 }

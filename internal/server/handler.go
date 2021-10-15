@@ -18,35 +18,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-const (
-	AuthorizationHeader  = "Authorization"
-	NeededSecurityScheme = "Bearer"
-
-	DefaultStatusCode = 200
-
-	IDQueryKey = "id"
-)
-
-// ConvertResponse represents an image conversion response.
-type ConvertResponse struct {
-	RequestID string `json:"request_id"`
-}
-
-// LoginResponse represents token for authorization response.
-type LoginResponse struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-}
-
-// SignUpResponse represents user id from sign up response.
-type SignUpResponse struct {
-	UserID string `json:"user_id"`
-}
-
-// DownloadResponse represents downloaded image URL.
-type DownloadResponse struct {
-	ImageURL string `json:"image_url"`
-}
+const IDQueryKey = "id"
 
 // Server represents application server.
 type Server struct {
@@ -93,17 +65,22 @@ func (s *Server) LogIn(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	accessToken, refreshToken, err := s.authService.LogIn(r.Context(), request.Email, request.Password)
-	if err == service.ErrInvalidParam {
-		reportErrorWithCode(w, err, http.StatusUnauthorized)
-		return
-	}
-	if err != nil {
-		reportErrorWithCode(w, err, http.StatusInternalServerError)
+	if request.Email == "" || request.Password == "" {
+		reportErrorWithCode(w, fmt.Errorf("empty field"), http.StatusBadRequest)
 		return
 	}
 
-	sendResponse(w, LoginResponse{AccessToken: accessToken, RefreshToken: refreshToken}, http.StatusOK)
+	accessToken, refreshToken, err := s.authService.LogIn(r.Context(), request.Email, request.Password)
+	if err != nil {
+		reportError(w, err)
+	}
+
+	type loginResponse struct {
+		AccessToken  string `json:"access_token"`
+		RefreshToken string `json:"refresh_token"`
+	}
+
+	sendResponse(w, loginResponse{AccessToken: accessToken, RefreshToken: refreshToken}, http.StatusOK)
 }
 
 // SignUp implements the user registration process.
@@ -132,7 +109,11 @@ func (s *Server) SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sendResponse(w, SignUpResponse{UserID: userID}, http.StatusOK)
+	type signUpResponse struct {
+		UserID string `json:"user_id"`
+	}
+
+	sendResponse(w, signUpResponse{UserID: userID}, http.StatusOK)
 }
 
 // ConvertImage converts needed image according to the request.
@@ -164,7 +145,11 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sendResponse(w, ConvertResponse{RequestID: requestID}, http.StatusAccepted)
+	type convertResponse struct {
+		RequestID string `json:"request_id"`
+	}
+
+	sendResponse(w, convertResponse{RequestID: requestID}, http.StatusAccepted)
 
 	err = s.producer.SendToQueue(sourceFileID, filename, sourceFormat, targetFormat, requestID, ratio)
 	if err != nil {
@@ -188,7 +173,11 @@ func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sendResponse(w, DownloadResponse{ImageURL: url}, http.StatusOK)
+	type downloadResponse struct {
+		ImageURL string `json:"image_url"`
+	}
+
+	sendResponse(w, downloadResponse{ImageURL: url}, http.StatusOK)
 }
 
 // GetRequestsHistory displays the user's request history.
