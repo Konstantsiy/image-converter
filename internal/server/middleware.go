@@ -10,6 +10,12 @@ import (
 	"github.com/Konstantsiy/image-converter/pkg/logger"
 )
 
+const (
+	AuthorizationHeader  = "Authorization"
+	NeededSecurityScheme = "Bearer"
+	DefaultStatusCode    = 200
+)
+
 // StatusRecorder contains a writer for storing the requests status code.
 type StatusRecorder struct {
 	http.ResponseWriter
