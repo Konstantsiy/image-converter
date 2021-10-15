@@ -12,6 +12,8 @@ import (
 	"github.com/Konstantsiy/image-converter/pkg/logger"
 )
 
+var ErrInvalidParam = errors.New("invalid email or password")
+
 type AuthService struct {
 	usersRepo *repository.UsersRepository
 	tm        *jwt.TokenManager
@@ -27,39 +29,28 @@ func (auth *AuthService) ParseToken(accessToken string) (string, error) {
 
 func (auth *AuthService) LogIn(ctx context.Context, email, password string) (string, string, error) {
 	user, err := auth.usersRepo.GetUserByEmail(ctx, email)
+
 	if err == repository.ErrNoSuchUser {
-		return "", "", &ServiceError{
-			fmt.Errorf("invalid email or password"),
-			http.StatusUnauthorized,
-		}
+		return "", "", ErrInvalidParam
 	}
 	if err != nil {
-		return "", "", &ServiceError{err, http.StatusInternalServerError}
+		return "", "", err
 	}
 
 	if ok, err := hash.ComparePasswordHash(password, user.Password); !ok || err != nil {
-		return "", "", &ServiceError{
-			fmt.Errorf("invalid email or password"),
-			http.StatusUnauthorized,
-		}
+		return "", "", ErrInvalidParam
 	}
 
 	logger.FromContext(ctx).WithField("user_id", user.ID).Infoln("user successfully logged in")
 
 	accessToken, err := auth.tm.GenerateAccessToken(user.ID)
 	if err != nil {
-		return "", "", &ServiceError{
-			fmt.Errorf("can't generate access token: %w", err),
-			http.StatusInternalServerError,
-		}
+		return "", "", fmt.Errorf("can't generate access token: %w", err)
 	}
 
 	refreshToken, err := auth.tm.GenerateRefreshToken()
 	if err != nil {
-		return "", "", &ServiceError{
-			fmt.Errorf("can't generate refresh token: %w", err),
-			http.StatusInternalServerError,
-		}
+		return "", "", fmt.Errorf("can't generate refresh token: %w", err)
 	}
 
 	return accessToken, refreshToken, nil

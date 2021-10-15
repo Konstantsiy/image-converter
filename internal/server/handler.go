@@ -94,8 +94,12 @@ func (s *Server) LogIn(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	accessToken, refreshToken, err := s.authService.LogIn(r.Context(), request.Email, request.Password)
+	if err == service.ErrInvalidParam {
+		reportErrorWithCode(w, err, http.StatusUnauthorized)
+		return
+	}
 	if err != nil {
-		reportError(w, err)
+		reportErrorWithCode(w, err, http.StatusInternalServerError)
 		return
 	}
 

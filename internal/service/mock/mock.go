@@ -6,10 +6,10 @@ package mock_service
 
 import (
 	context "context"
-	reflect "reflect"
-
 	repository "github.com/Konstantsiy/image-converter/internal/repository"
 	gomock "github.com/golang/mock/gomock"
+	multipart "mime/multipart"
+	reflect "reflect"
 )
 
 // MockAuthorization is a mock of Authorization interface
@@ -51,12 +51,13 @@ func (mr *MockAuthorizationMockRecorder) ParseToken(accessToken interface{}) *go
 }
 
 // LogIn mocks base method
-func (m *MockAuthorization) LogIn(ctx context.Context, email, password string) (repository.User, error) {
+func (m *MockAuthorization) LogIn(ctx context.Context, email, password string) (string, string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "LogIn", ctx, email, password)
-	ret0, _ := ret[0].(repository.User)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(string)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // LogIn indicates an expected call of LogIn
@@ -104,9 +105,9 @@ func (m *MockImages) EXPECT() *MockImagesMockRecorder {
 }
 
 // Convert mocks base method
-func (m *MockImages) Convert(ctx context.Context, filename, sourceFormat, targetFormat, ratio string) (string, string, error) {
+func (m *MockImages) Convert(ctx context.Context, sourceFile multipart.File, filename, sourceFormat, targetFormat string, ratio int) (string, string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Convert", ctx, filename, sourceFormat, targetFormat, ratio)
+	ret := m.ctrl.Call(m, "Convert", ctx, sourceFile, filename, sourceFormat, targetFormat, ratio)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(error)
@@ -114,24 +115,24 @@ func (m *MockImages) Convert(ctx context.Context, filename, sourceFormat, target
 }
 
 // Convert indicates an expected call of Convert
-func (mr *MockImagesMockRecorder) Convert(ctx, filename, sourceFormat, targetFormat, ratio interface{}) *gomock.Call {
+func (mr *MockImagesMockRecorder) Convert(ctx, sourceFile, filename, sourceFormat, targetFormat, ratio interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Convert", reflect.TypeOf((*MockImages)(nil).Convert), ctx, filename, sourceFormat, targetFormat, ratio)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Convert", reflect.TypeOf((*MockImages)(nil).Convert), ctx, sourceFile, filename, sourceFormat, targetFormat, ratio)
 }
 
 // Download mocks base method
-func (m *MockImages) Download(ctx context.Context, userID, imageID string) (string, error) {
+func (m *MockImages) Download(ctx context.Context, id string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Download", ctx, userID, imageID)
+	ret := m.ctrl.Call(m, "Download", ctx, id)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Download indicates an expected call of Download
-func (mr *MockImagesMockRecorder) Download(ctx, userID, imageID interface{}) *gomock.Call {
+func (mr *MockImagesMockRecorder) Download(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Download", reflect.TypeOf((*MockImages)(nil).Download), ctx, userID, imageID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Download", reflect.TypeOf((*MockImages)(nil).Download), ctx, id)
 }
 
 // MockRequests is a mock of Requests interface
