@@ -16,11 +16,11 @@ const (
 	ContentTypeValue = "application/json"
 )
 
-// sendResponse marshals and writes response to the ResponseWriter.
+// sendResponse marshals and writes loginResponse to the ResponseWriter.
 func sendResponse(w http.ResponseWriter, resp interface{}, statusCode int) {
 	respJSON, err := json.Marshal(resp)
 	if err != nil {
-		logger.FromContext(context.Background()).Errorln(fmt.Errorf("can't marshal response: %v", err))
+		logger.FromContext(context.Background()).Errorln(fmt.Errorf("can't marshal loginResponse: %v", err))
 		fmt.Fprint(w, resp)
 		return
 	}

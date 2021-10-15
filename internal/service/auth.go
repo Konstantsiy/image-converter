@@ -12,8 +12,6 @@ import (
 	"github.com/Konstantsiy/image-converter/pkg/logger"
 )
 
-var ErrInvalidParam = errors.New("invalid email or password")
-
 type AuthService struct {
 	usersRepo *repository.UsersRepository
 	tm        *jwt.TokenManager
@@ -29,16 +27,24 @@ func (auth *AuthService) ParseToken(accessToken string) (string, error) {
 
 func (auth *AuthService) LogIn(ctx context.Context, email, password string) (string, string, error) {
 	user, err := auth.usersRepo.GetUserByEmail(ctx, email)
-
 	if err == repository.ErrNoSuchUser {
-		return "", "", ErrInvalidParam
+		return "", "", &ServiceError{
+			Err:        fmt.Errorf("invalid email or password"),
+			StatusCode: http.StatusUnauthorized,
+		}
 	}
 	if err != nil {
-		return "", "", err
+		return "", "", &ServiceError{
+			Err:        err,
+			StatusCode: http.StatusInternalServerError,
+		}
 	}
 
 	if ok, err := hash.ComparePasswordHash(password, user.Password); !ok || err != nil {
-		return "", "", ErrInvalidParam
+		return "", "", &ServiceError{
+			Err:        fmt.Errorf("invalid email or password"),
+			StatusCode: http.StatusUnauthorized,
+		}
 	}
 
 	logger.FromContext(ctx).WithField("user_id", user.ID).Infoln("user successfully logged in")
