@@ -10,6 +10,7 @@ import (
 	"github.com/Konstantsiy/image-converter/internal/repository"
 )
 
+// RequestsService implements logic for working with requests.
 type RequestsService struct {
 	requestsRepo *repository.RequestsRepository
 }
@@ -23,7 +24,7 @@ func (rs *RequestsService) GetUsersRequests(ctx context.Context) ([]repository.C
 	userID, ok := appcontext.UserIDFromContext(ctx)
 	if !ok {
 		return nil, &ServiceError{
-			fmt.Errorf("can't get user id from application contex"),
+			fmt.Errorf("can't get user id from application context"),
 			http.StatusInternalServerError,
 		}
 	}

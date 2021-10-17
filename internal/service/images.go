@@ -15,6 +15,7 @@ import (
 	"github.com/Konstantsiy/image-converter/internal/storage"
 )
 
+// ImageService implements logic for working with images.
 type ImageService struct {
 	imagesRepo   *repository.ImagesRepository
 	requestsRepo *repository.RequestsRepository
@@ -67,7 +68,10 @@ func (is *ImageService) Convert(ctx context.Context, sourceFile multipart.File, 
 func (is *ImageService) Download(ctx context.Context, id string) (string, error) {
 	userID, ok := appcontext.UserIDFromContext(ctx)
 	if !ok {
-		return "", fmt.Errorf("can't get user id from application context")
+		return "", &ServiceError{
+			Err:        fmt.Errorf("can't get user id from application context"),
+			StatusCode: http.StatusUnauthorized,
+		}
 	}
 
 	imageID, err := is.imagesRepo.GetImageIDByUserID(ctx, userID, id)

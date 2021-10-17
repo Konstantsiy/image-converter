@@ -12,6 +12,7 @@ import (
 	"github.com/Konstantsiy/image-converter/pkg/logger"
 )
 
+// AuthService implements logic for working with users.
 type AuthService struct {
 	usersRepo *repository.UsersRepository
 	tm        *jwt.TokenManager
@@ -21,10 +22,12 @@ func NewAuthService(repo *repository.UsersRepository, tm *jwt.TokenManager) *Aut
 	return &AuthService{usersRepo: repo, tm: tm}
 }
 
+// ParseToken parse the authorization token.
 func (auth *AuthService) ParseToken(accessToken string) (string, error) {
 	return auth.tm.ParseToken(accessToken)
 }
 
+// LogIn implements authentication logic.
 func (auth *AuthService) LogIn(ctx context.Context, email, password string) (string, string, error) {
 	user, err := auth.usersRepo.GetUserByEmail(ctx, email)
 	if err == repository.ErrNoSuchUser {
@@ -62,6 +65,7 @@ func (auth *AuthService) LogIn(ctx context.Context, email, password string) (str
 	return accessToken, refreshToken, nil
 }
 
+// SignUp implements registration logic.
 func (auth *AuthService) SignUp(ctx context.Context, email, password string) (string, error) {
 	hashPwd, err := hash.GeneratePasswordHash(password)
 	if err != nil {
