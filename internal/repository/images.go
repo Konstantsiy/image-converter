@@ -9,6 +9,7 @@ import (
 
 var ErrNoSuchImage = errors.New("the image with this id does not exist")
 
+// ImagesRepository represents repository fro working with images.
 type ImagesRepository struct {
 	db *sql.DB
 }
