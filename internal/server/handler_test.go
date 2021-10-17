@@ -2,13 +2,16 @@ package server
 
 import (
 	"bytes"
-	"errors"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
+
+	"github.com/Konstantsiy/image-converter/internal/repository"
 
 	"github.com/Konstantsiy/image-converter/internal/service"
-
 	mockservice "github.com/Konstantsiy/image-converter/internal/service/mock"
 	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
@@ -187,7 +190,7 @@ func TestServer_SignUp(t *testing.T) {
 				s.EXPECT().
 					SignUp(gomock.Any(), req.email, req.password).
 					Return("", &service.ServiceError{
-						Err:        errors.New("the user with the given email already exists"),
+						Err:        fmt.Errorf("the user with the given email already exists"),
 						StatusCode: http.StatusBadRequest,
 					})
 			},
@@ -205,7 +208,7 @@ func TestServer_SignUp(t *testing.T) {
 				s.EXPECT().
 					SignUp(gomock.Any(), req.email, req.password).
 					Return("", &service.ServiceError{
-						Err:        errors.New("cannot generate password hash"),
+						Err:        fmt.Errorf("cannot generate password hash"),
 						StatusCode: http.StatusInternalServerError,
 					})
 			},
@@ -238,6 +241,182 @@ func TestServer_SignUp(t *testing.T) {
 	}
 }
 
-func TestServer_ConvertImage(t *testing.T) {
+func TestServer_DownloadImage(t *testing.T) {
+	testTable := []struct {
+		name                 string
+		imageID              string
+		mockBehavior         func(s *mockservice.MockImages, id string)
+		expectedStatusCode   int
+		expectedResponseBody string
+	}{
+		{
+			name:    "Ok",
+			imageID: "1",
+			mockBehavior: func(s *mockservice.MockImages, id string) {
+				s.EXPECT().
+					Download(gomock.Any(), id).
+					Return("1", nil)
+			},
+			expectedStatusCode:   http.StatusOK,
+			expectedResponseBody: `{"image_url":"1"}`,
+		},
+		{
+			name:                 "Missing image id",
+			imageID:              "",
+			mockBehavior:         func(s *mockservice.MockImages, id string) {},
+			expectedStatusCode:   http.StatusBadRequest,
+			expectedResponseBody: "image id is missing in parameters\n",
+		},
+		{
+			name:    "Cannot get user id from context",
+			imageID: "1",
+			mockBehavior: func(s *mockservice.MockImages, id string) {
+				s.EXPECT().
+					Download(gomock.Any(), id).
+					Return("", &service.ServiceError{
+						Err:        fmt.Errorf("can't get user id from application context"),
+						StatusCode: http.StatusUnauthorized,
+					})
+			},
+			expectedStatusCode:   http.StatusUnauthorized,
+			expectedResponseBody: "can't get user id from application context\n",
+		},
+		{
+			name:    "No such image",
+			imageID: "1",
+			mockBehavior: func(s *mockservice.MockImages, id string) {
+				s.EXPECT().
+					Download(gomock.Any(), id).
+					Return("", &service.ServiceError{
+						Err:        fmt.Errorf("no such image"),
+						StatusCode: http.StatusNotFound,
+					})
+			},
+			expectedStatusCode:   http.StatusNotFound,
+			expectedResponseBody: "no such image\n",
+		},
+		{
+			name:    "Storage error",
+			imageID: "1",
+			mockBehavior: func(s *mockservice.MockImages, id string) {
+				s.EXPECT().
+					Download(gomock.Any(), id).
+					Return("", &service.ServiceError{
+						Err:        fmt.Errorf("can't get image url"),
+						StatusCode: http.StatusInternalServerError,
+					})
+			},
+			expectedStatusCode:   http.StatusInternalServerError,
+			expectedResponseBody: "can't get image url\n",
+		},
+	}
 
+	for _, tc := range testTable {
+		t.Run(tc.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			is := mockservice.NewMockImages(c)
+			tc.mockBehavior(is, tc.imageID)
+
+			s := Server{imageService: is}
+
+			r := mux.NewRouter()
+			r.HandleFunc("/images", s.DownloadImage).Methods("GET")
+
+			w := httptest.NewRecorder()
+			req := httptest.NewRequest("GET", "/images", nil)
+
+			q := req.URL.Query()
+			q.Add("id", tc.imageID)
+			req.URL.RawQuery = q.Encode()
+
+			r.ServeHTTP(w, req)
+
+			assert.Equal(t, tc.expectedStatusCode, w.Code)
+			assert.Equal(t, tc.expectedResponseBody, w.Body.String())
+		})
+	}
+}
+
+func TestServer_GetRequestsHistory(t *testing.T) {
+	defaultTime := time.Now()
+	defaultResponseBody := []repository.ConversionRequest{
+		{ID: "1", UserID: "1", SourceID: "11", TargetID: "12", SourceFormat: "jpg", TargetFormat: "png",
+			Ratio: 90, Created: defaultTime, Updated: defaultTime, Status: "done"},
+		{ID: "2", UserID: "2", SourceID: "22", TargetID: "23", SourceFormat: "jpeg", TargetFormat: "png",
+			Ratio: 90, Created: defaultTime, Updated: defaultTime, Status: "processing"},
+	}
+
+	respJSON, err := json.Marshal(defaultResponseBody)
+	if err != nil {
+		t.Fatalf("can't marshal response body: %v", err)
+	}
+
+	testTable := []struct {
+		name                 string
+		mockBehavior         func(s *mockservice.MockRequests)
+		expectedStatusCode   int
+		expectedResponseBody string
+	}{
+		{
+			name: "Ok",
+			mockBehavior: func(s *mockservice.MockRequests) {
+				s.EXPECT().
+					GetUsersRequests(gomock.Any()).
+					Return(defaultResponseBody, nil)
+			},
+			expectedStatusCode:   http.StatusOK,
+			expectedResponseBody: string(respJSON),
+		},
+		{
+			name: "Cannot get user id from context",
+			mockBehavior: func(s *mockservice.MockRequests) {
+				s.EXPECT().
+					GetUsersRequests(gomock.Any()).
+					Return(nil, &service.ServiceError{
+						Err:        fmt.Errorf("can't get user id from application context"),
+						StatusCode: http.StatusInternalServerError,
+					})
+			},
+			expectedStatusCode:   http.StatusInternalServerError,
+			expectedResponseBody: "can't get user id from application context\n",
+		},
+		{
+			name: "Repository error",
+			mockBehavior: func(s *mockservice.MockRequests) {
+				s.EXPECT().
+					GetUsersRequests(gomock.Any()).
+					Return(nil, &service.ServiceError{
+						Err:        fmt.Errorf("repository error"),
+						StatusCode: http.StatusInternalServerError,
+					})
+			},
+			expectedStatusCode:   http.StatusInternalServerError,
+			expectedResponseBody: "repository error\n",
+		},
+	}
+
+	for _, tc := range testTable {
+		t.Run(tc.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			rs := mockservice.NewMockRequests(c)
+			tc.mockBehavior(rs)
+
+			s := Server{requestsService: rs}
+
+			r := mux.NewRouter()
+			r.HandleFunc("/requests", s.GetRequestsHistory).Methods("GET")
+
+			w := httptest.NewRecorder()
+			req := httptest.NewRequest("GET", "/requests", nil)
+
+			r.ServeHTTP(w, req)
+
+			assert.Equal(t, tc.expectedStatusCode, w.Code)
+			assert.Equal(t, tc.expectedResponseBody, w.Body.String())
+		})
+	}
 }
