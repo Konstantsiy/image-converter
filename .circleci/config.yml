@@ -7,3 +7,4 @@ version: 2
 #        auth:
 #          username: $DOCKER_HUB_USER
 #          password: $DOCKER_HUB_PASSWORD
+
