@@ -10,7 +10,10 @@ import (
 )
 
 func TestRequestsRepository_InsertRequest(t *testing.T) {
-	db, mock := NewMock(t)
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("an error '%v' was not expected when opening a stub database connection", err)
+	}
 	defer db.Close()
 
 	type input struct {
@@ -84,7 +87,10 @@ func TestRequestsRepository_InsertRequest(t *testing.T) {
 }
 
 func TestRequestsRepository_UpdateRequest(t *testing.T) {
-	db, mock := NewMock(t)
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("an error '%v' was not expected when opening a stub database connection", err)
+	}
 	defer db.Close()
 
 	type input struct {

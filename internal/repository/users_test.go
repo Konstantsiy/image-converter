@@ -9,7 +9,10 @@ import (
 )
 
 func TestUsersRepository_InsertUser(t *testing.T) {
-	db, mock := NewMock(t)
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("an error '%v' was not expected when opening a stub database connection", err)
+	}
 	defer db.Close()
 
 	type input struct {
@@ -88,7 +91,10 @@ func TestUsersRepository_InsertUser(t *testing.T) {
 }
 
 func TestUsersRepository_GetUserByEmail(t *testing.T) {
-	db, mock := NewMock(t)
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("an error '%v' was not expected when opening a stub database connection", err)
+	}
 	defer db.Close()
 
 	usersRepo := NewUsersRepository(db)

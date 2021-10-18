@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,18 +9,11 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 )
 
-// NewMock creates new sqlmock instance.
-func NewMock(t *testing.T) (*sql.DB, sqlmock.Sqlmock) {
+func TestImagesRepository_InsertImage(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	if err != nil {
-		t.Errorf("an error '%v' was not expected when opening a stub database connection", err)
+		t.Fatalf("an error '%v' was not expected when opening a stub database connection", err)
 	}
-
-	return db, mock
-}
-
-func TestImagesRepository_InsertImage(t *testing.T) {
-	db, mock := NewMock(t)
 	defer db.Close()
 
 	type input struct {
@@ -85,7 +77,10 @@ func TestImagesRepository_InsertImage(t *testing.T) {
 }
 
 func TestImagesRepository_GetImageIDByUserID(t *testing.T) {
-	db, mock := NewMock(t)
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("an error '%v' was not expected when opening a stub database connection", err)
+	}
 	defer db.Close()
 
 	type input struct {
@@ -126,12 +121,12 @@ func TestImagesRepository_GetImageIDByUserID(t *testing.T) {
 				imageID: "123",
 			},
 			mockBehavior: func(args input) {
-				rows := sqlmock.NewRows([]string{"id"})
 				mock.ExpectQuery(query).
 					WithArgs(args.imageID, args.userID).
-					WillReturnRows(rows)
+					WillReturnError(ErrNoSuchImage)
 			},
 			isErrorExpected: true,
+			expectedError:   ErrNoSuchImage,
 		},
 		{
 			name: "Database error",
