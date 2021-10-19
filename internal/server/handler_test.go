@@ -4,10 +4,19 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"image"
+	"image/color"
+	"image/jpeg"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/Konstantsiy/image-converter/internal/repository"
 
@@ -412,6 +421,110 @@ func TestServer_GetRequestsHistory(t *testing.T) {
 
 			w := httptest.NewRecorder()
 			req := httptest.NewRequest("GET", "/requests", nil)
+
+			r.ServeHTTP(w, req)
+
+			assert.Equal(t, tc.expectedStatusCode, w.Code)
+			assert.Equal(t, tc.expectedResponseBody, w.Body.String())
+		})
+	}
+}
+
+func createMockRequest(t *testing.T, url, method string) (*http.Request, multipart.File) {
+	file, err := os.Create("test.jpg")
+	require.NoError(t, err)
+
+	img := image.NewRGBA(image.Rect(0, 0, 20, 20))
+	for x := 0; x < 20; x++ {
+		for y := 0; y < 20; y++ {
+			img.Set(x, y, color.White)
+		}
+	}
+
+	err = jpeg.Encode(file, img, nil)
+	require.NoError(t, err)
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	part, err := writer.CreateFormFile("file", filepath.Base("test.jpg"))
+	require.NoError(t, err)
+	_, _ = io.Copy(part, file)
+
+	writer.WriteField("sourceFormat", "jpg")
+	writer.WriteField("targetFormat", "png")
+	writer.WriteField("ratio", "90")
+
+	err = writer.Close()
+	require.NoError(t, err)
+
+	req, err := http.NewRequest(method, url, body)
+	require.NoError(t, err)
+
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	return req, file
+}
+
+func TestServer_ConvertImage(t *testing.T) {
+	type request struct {
+		sourceFormat string
+		targetFormat string
+		ratio        int
+	}
+
+	defaultFilename := "test"
+
+	testTable := []struct {
+		name                 string
+		request              request
+		requestBody          string
+		mockBehavior         func(s *mockservice.MockImages, file multipart.File, request request)
+		expectedStatusCode   int
+		expectedResponseBody string
+	}{
+		{
+			name: "Ok",
+			request: request{
+				sourceFormat: "jpg",
+				targetFormat: "png",
+				ratio:        90,
+			},
+			mockBehavior: func(s *mockservice.MockImages, file multipart.File, request request) {
+				s.EXPECT().
+					Convert(gomock.Any(), file, defaultFilename, request.sourceFormat,
+						request.targetFormat, request.ratio).
+					Return("1", "1", nil)
+			},
+			expectedStatusCode:   http.StatusOK,
+			expectedResponseBody: `{"request_id":"1"}`,
+		},
+	}
+
+	for _, tc := range testTable {
+		t.Run(tc.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			is := mockservice.NewMockImages(c)
+
+			s := Server{imageService: is}
+
+			r := mux.NewRouter()
+			r.HandleFunc("/conversion", s.ConvertImage).Methods("POST")
+
+			w := httptest.NewRecorder()
+			req, file := createMockRequest(t, "/conversion", "POST")
+			defer func() {
+				err := file.Close()
+				require.NoError(t, err)
+			}()
+
+			tc.mockBehavior(is, file, tc.request)
+			//q := req.URL.Query()
+			//q.Add("sourceFormat", tc.request.sourceFormat)
+			//q.Add("targetFormat", tc.request.targetFormat)
+			//q.Add("ratio", strconv.Itoa(tc.request.ratio))
+			//req.URL.RawQuery = q.Encode()
 
 			r.ServeHTTP(w, req)
 
