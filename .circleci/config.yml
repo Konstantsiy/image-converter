@@ -29,6 +29,10 @@ jobs:
           command: go mod download
 
       - run:
+          name: Install psql
+          command: sudo apt-get -y update && sudo apt-get install -y postgresql-client
+
+      - run:
           name: Waiting for Postgres to be ready
           command: dockerize -wait http://localhost:5432 -timeout 1m
 
