@@ -29,18 +29,18 @@ jobs:
           name: Install dependencies
           command: go mod download
       - run:
+          name: Run unit tests
+          command: go test ./...
+      - run:
           name: Install PostgreSQL
           command: sudo apt-get -y update && sudo apt-get install -y postgresql-client
-      - run:
-          name: Waiting for Postgres to be ready
-          command: dockerize -wait http://localhost:5432 -timeout 1m
+#      - run:
+#          name: Waiting for Postgres to be ready
+#          command: dockerize -wait http://localhost:5432 -timeout 1m
       - save_cache:
           key: v1-pkg-cache
           paths:
             - /home/circleci/go/pkg/mod
-      - run:
-          name: Run unit tests
-          command: go test ./...
       - run:
           name: Create database
           command: >-
