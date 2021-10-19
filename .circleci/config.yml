@@ -1,9 +1,50 @@
 version: 2
 
-#jobs:
-#  test:
-#    docker:
-#      - image: circleci/golang:1.16
-#        auth:
-#          username: $DOCKER_HUB_USER
-#          password: $DOCKER_HUB_PASSWORD
+jobs:
+  test:
+    docker:
+      - image: circleci/golang:1.16
+        auth:
+          username: $DOCKER_HUB_USER
+          password: $DOCKER_HUB_PASSWORD
+
+    parallelism: 2
+
+    environment:
+      TEST_RESULTS: /tmp/test-results
+      HOST: localhost
+      PORT: 5432
+      POSTGRES_USER: $DB_USER
+      POSTGRES_DB: $DB_NAME
+      SSL_MODE: $DB_SSL_MODE
+      STORAGE_PATH: "/tmp"
+
+    steps:
+      - checkout
+      - run: mkdir -p $TEST_RESULT
+      - restore_cache:
+          keys:
+            - go-mod-v4-{{ checksum "go.sum" }}
+      - run:
+          name: Install dependencies
+          command: go mod download
+      - save_cache:
+          key: v1-pkg-cache
+          paths:
+            - /home/circleci/go/pkg/mod
+      - run:
+          name: Run unit tests
+          command: go test ./...
+#      - run:
+#          name: Install PostgreSQL
+#          command: sudo apt-get -y update && sudo apt-get install -y postgresql-client
+#      - run:
+#          name: Waiting for Postgres to be ready
+#          command:
+
+workflows:
+  version: 2
+  build-workflow:
+    jobs:
+      - test
+...
