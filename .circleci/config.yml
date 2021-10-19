@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - checkout
-      - run: mkdir -p $TEST_RESULT
+      - run: mkdir -p $TEST_RESULTS
       - restore_cache:
           keys:
             - go-mod-v4-{{ checksum "go.sum" }}
