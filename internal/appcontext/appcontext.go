@@ -19,8 +19,3 @@ func UserIDFromContext(ctx context.Context) (string, bool) {
 	userID, ok := ctx.Value(userIDKey).(string)
 	return userID, ok
 }
-
-//func ContextWithTimeout(ctx context.Context, timeout time.Duration) (context.Context, context.CancelFunc) {
-//	c, cancel := context.WithTimeout(ctx, timeout)
-//	return c, cancel
-//}
