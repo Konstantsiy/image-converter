@@ -34,10 +34,40 @@ jobs:
           name: Run unit tests
           command: go test ./...
 
+  build:
+    docker:
+      - image: circleci/golang:1.16
+    environment:
+      GOOS: linux
+      GOARCH: amd64
+      CGO_ENABLED: 0
+
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: go mod download
+
+      - run:
+          name: Build api
+          command: go build cmd/api/main.go
+
+      - run:
+          name: Build converter
+          command: go build cmd/converter/main.go
+
+      - save_cache:
+          key: v1-pkg-cache
+          paths:
+            - /home/circleci/go/pkg/mod
+
 
 workflows:
   version: 2
   build-workflow:
     jobs:
       - test
+      - build:
+          requires:
+            - test
 ...
