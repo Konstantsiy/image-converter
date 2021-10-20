@@ -7,9 +7,6 @@ jobs:
         auth:
           username: $DOCKER_HUB_USER
           password: $DOCKER_HUB_PASSWORD
-      - image: postgres:13-alpine
-        environment:
-          POSTGRES_PASSWORD: $POSTGRES_PASSWORD
 
     parallelism: 2
 
@@ -28,14 +25,6 @@ jobs:
           name: Install dependencies
           command: go mod download
 
-      - run:
-          name: Install psql
-          command: sudo apt-get -y update && sudo apt-get install -y postgresql-client
-
-      - run:
-          name: Waiting for Postgres to be ready
-          command: dockerize -wait http://localhost:5432 -timeout 1m
-
       - save_cache:
           key: v1-pkg-cache
           paths:
@@ -45,13 +34,12 @@ jobs:
           name: Run unit tests
           command: go test ./...
 
-      - run:
-          name: Create database
-          command: >-
-            psql postgres://postgres:$POSTGRES_PASSWORD@localhost:5432
-            --variable=user_var=User
-            --variable=password_var=Password
-            -f ./scripts/init.sql
+
+  build:
+
+
+
+
 
 
 
