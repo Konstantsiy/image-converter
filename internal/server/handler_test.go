@@ -534,6 +534,81 @@ func TestServer_ConvertImage(t *testing.T) {
 			expectedStatusCode:   http.StatusBadRequest,
 			expectedResponseBody: "invalid ratio form value\n",
 		},
+		{
+			name: "Invalid filename",
+			request: request{
+				formFileKey: "file",
+				filename:    "Screenshot_?.jpg",
+				params: map[string]string{
+					"sourceFormat": "jpg",
+					"targetFormat": "png",
+					"ratio":        "90",
+				},
+			},
+			mockBehavior:         func(s *mockservice.MockImages, p *mockservice.MockProducer, request request) {},
+			expectedStatusCode:   http.StatusBadRequest,
+			expectedResponseBody: "invalid filename: shouldn't contain space and any special characters like :;<>{}[]+=?&,\"\n",
+		},
+		{
+			name: "Invalid source format",
+			request: request{
+				formFileKey: "file",
+				filename:    "Screenshot_1.jpg",
+				params: map[string]string{
+					"sourceFormat": "jperg",
+					"targetFormat": "png",
+					"ratio":        "90",
+				},
+			},
+			mockBehavior:         func(s *mockservice.MockImages, p *mockservice.MockProducer, request request) {},
+			expectedStatusCode:   http.StatusBadRequest,
+			expectedResponseBody: "invalid source format: needed jpg or png\n",
+		},
+		{
+			name: "Invalid target format",
+			request: request{
+				formFileKey: "file",
+				filename:    "Screenshot_1.jpg",
+				params: map[string]string{
+					"sourceFormat": "jpeg",
+					"targetFormat": "pngdfdf",
+					"ratio":        "90",
+				},
+			},
+			mockBehavior:         func(s *mockservice.MockImages, p *mockservice.MockProducer, request request) {},
+			expectedStatusCode:   http.StatusBadRequest,
+			expectedResponseBody: "invalid target format: needed jpg or png\n",
+		},
+		{
+			name: "Invalid formats",
+			request: request{
+				formFileKey: "file",
+				filename:    "Screenshot_1.jpg",
+				params: map[string]string{
+					"sourceFormat": "jpeg",
+					"targetFormat": "jpg",
+					"ratio":        "90",
+				},
+			},
+			mockBehavior:         func(s *mockservice.MockImages, p *mockservice.MockProducer, request request) {},
+			expectedStatusCode:   http.StatusBadRequest,
+			expectedResponseBody: "invalid formats: source and target formats should differ\n",
+		},
+		{
+			name: "Invalid ratio",
+			request: request{
+				formFileKey: "file",
+				filename:    "Screenshot_1.jpg",
+				params: map[string]string{
+					"sourceFormat": "png",
+					"targetFormat": "jpeg",
+					"ratio":        "101",
+				},
+			},
+			mockBehavior:         func(s *mockservice.MockImages, p *mockservice.MockProducer, request request) {},
+			expectedStatusCode:   http.StatusBadRequest,
+			expectedResponseBody: "invalid ratio: needed a value from 1 to 99 inclusive\n",
+		},
 	}
 
 	for _, tc := range testTable {
@@ -551,7 +626,8 @@ func TestServer_ConvertImage(t *testing.T) {
 
 			w := httptest.NewRecorder()
 
-			req := createMockRequest(t, tc.request.filename, tc.request.formFileKey, "/conversion", "POST", tc.request.params)
+			req := createMockRequest(t, tc.request.filename, tc.request.formFileKey, "/conversion", "POST",
+				tc.request.params)
 			defer os.Remove(tc.request.filename)
 
 			tc.mockBehavior(is, p, tc.request)
