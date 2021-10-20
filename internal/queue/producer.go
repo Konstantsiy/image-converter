@@ -10,22 +10,22 @@ import (
 
 const MIMEContentType = "application/json"
 
-// Producer sends messages to the queue for further processing.
-type Producer struct {
+// RabbitMQProducer sends messages to the queue for further processing.
+type RabbitMQProducer struct {
 	client *rabbitMQClient
 }
 
-func NewProducer(conf *config.RabbitMQConfig) (*Producer, error) {
+func NewProducer(conf *config.RabbitMQConfig) (*RabbitMQProducer, error) {
 	client, err := initRabbitMQClient(conf)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Producer{client: client}, nil
+	return &RabbitMQProducer{client: client}, nil
 }
 
 // SendToQueue sends messages to the queue.
-func (p *Producer) SendToQueue(fileID, filename, sourceFormat, targetFormat, requestID string, ratio int) error {
+func (p *RabbitMQProducer) SendToQueue(fileID, filename, sourceFormat, targetFormat, requestID string, ratio int) error {
 	msg := queueMessage{
 		FileID:       fileID,
 		Filename:     filename,

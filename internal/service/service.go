@@ -33,3 +33,7 @@ type Images interface {
 type Requests interface {
 	GetUsersRequests(ctx context.Context) ([]repository.ConversionRequest, error)
 }
+
+type Producer interface {
+	SendToQueue(fileID, filename, sourceFormat, targetFormat, requestID string, ratio int) error
+}

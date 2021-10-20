@@ -15,24 +15,24 @@ import (
 	"github.com/streadway/amqp"
 )
 
-// Consumer listens to the queue and processes outgoing messages.
-type Consumer struct {
+// RabbitMQConsumer listens to the queue and processes outgoing messages.
+type RabbitMQConsumer struct {
 	client       *rabbitMQClient
 	requestsRepo *repository.RequestsRepository
 	imagesRepo   *repository.ImagesRepository
 	storage      *storage.Storage
 }
 
-func NewConsumer(requestsRepo *repository.RequestsRepository, imagesRepo *repository.ImagesRepository, storage *storage.Storage, conf *config.RabbitMQConfig) (*Consumer, error) {
+func NewConsumer(requestsRepo *repository.RequestsRepository, imagesRepo *repository.ImagesRepository, storage *storage.Storage, conf *config.RabbitMQConfig) (*RabbitMQConsumer, error) {
 	client, err := initRabbitMQClient(conf)
 	if err != nil {
 		return nil, err
 	}
-	return &Consumer{requestsRepo: requestsRepo, imagesRepo: imagesRepo, storage: storage, client: client}, nil
+	return &RabbitMQConsumer{requestsRepo: requestsRepo, imagesRepo: imagesRepo, storage: storage, client: client}, nil
 }
 
 // Listen listens to the queue channel in a separate goroutine.
-func (c *Consumer) Listen() error {
+func (c *RabbitMQConsumer) Listen() error {
 	err := c.client.ch.Qos(1, 0, false)
 	if err != nil {
 		return fmt.Errorf("can't configure QoS: %w", err)
@@ -69,7 +69,7 @@ func (c *Consumer) Listen() error {
 }
 
 // consumeFromQueue wraps the message processing and confirms its completion.
-func (c *Consumer) consumeFromQueue(ctx context.Context, msg *amqp.Delivery) error {
+func (c *RabbitMQConsumer) consumeFromQueue(ctx context.Context, msg *amqp.Delivery) error {
 	var data queueMessage
 	err := json.NewDecoder(bytes.NewReader(msg.Body)).Decode(&data)
 	if err != nil {
@@ -90,7 +90,7 @@ func (c *Consumer) consumeFromQueue(ctx context.Context, msg *amqp.Delivery) err
 }
 
 // process processes the current message from the queue.
-func (c *Consumer) process(ctx context.Context, data queueMessage) error {
+func (c *RabbitMQConsumer) process(ctx context.Context, data queueMessage) error {
 	sourceFile, err := c.storage.DownloadFile(data.FileID)
 	if err != nil {
 		return fmt.Errorf("storage error: %w", err)

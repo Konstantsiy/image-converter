@@ -20,10 +20,10 @@ type ImageService struct {
 	imagesRepo   *repository.ImagesRepository
 	requestsRepo *repository.RequestsRepository
 	storage      *storage.Storage
-	producer     *queue.Producer
+	producer     *queue.RabbitMQProducer
 }
 
-func NewImageService(imagesRepo *repository.ImagesRepository, requestsRepo *repository.RequestsRepository, storage *storage.Storage, producer *queue.Producer) *ImageService {
+func NewImageService(imagesRepo *repository.ImagesRepository, requestsRepo *repository.RequestsRepository, storage *storage.Storage, producer *queue.RabbitMQProducer) *ImageService {
 	return &ImageService{imagesRepo: imagesRepo, requestsRepo: requestsRepo, storage: storage, producer: producer}
 }
 

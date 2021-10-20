@@ -430,9 +430,13 @@ func TestServer_GetRequestsHistory(t *testing.T) {
 	}
 }
 
-func createMockRequest(t *testing.T, url, method string) (*http.Request, multipart.File) {
-	file, err := os.Create("test.jpg")
+func createMockRequest(t *testing.T, filename, formFileKey, url, method string, params map[string]string) *http.Request {
+	file, err := os.Create(filename)
 	require.NoError(t, err)
+	defer func() {
+		err := file.Close()
+		require.NoError(t, err)
+	}()
 
 	img := image.NewRGBA(image.Rect(0, 0, 20, 20))
 	for x := 0; x < 20; x++ {
@@ -446,13 +450,13 @@ func createMockRequest(t *testing.T, url, method string) (*http.Request, multipa
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile("file", filepath.Base("test.jpg"))
+	part, err := writer.CreateFormFile(formFileKey, filepath.Base(filename))
 	require.NoError(t, err)
 	_, _ = io.Copy(part, file)
 
-	writer.WriteField("sourceFormat", "jpg")
-	writer.WriteField("targetFormat", "png")
-	writer.WriteField("ratio", "90")
+	for key, val := range params {
+		_ = writer.WriteField(key, val)
+	}
 
 	err = writer.Close()
 	require.NoError(t, err)
@@ -460,43 +464,75 @@ func createMockRequest(t *testing.T, url, method string) (*http.Request, multipa
 	req, err := http.NewRequest(method, url, body)
 	require.NoError(t, err)
 
-	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set(ContentTypeKey, writer.FormDataContentType())
 
-	return req, file
+	return req
 }
 
 func TestServer_ConvertImage(t *testing.T) {
 	type request struct {
-		sourceFormat string
-		targetFormat string
-		ratio        int
+		formFileKey string
+		filename    string
+		params      map[string]string
 	}
-
-	defaultFilename := "test"
 
 	testTable := []struct {
 		name                 string
 		request              request
-		requestBody          string
-		mockBehavior         func(s *mockservice.MockImages, file multipart.File, request request)
+		mockBehavior         func(s *mockservice.MockImages, p *mockservice.MockProducer, request request)
 		expectedStatusCode   int
 		expectedResponseBody string
 	}{
 		{
 			name: "Ok",
 			request: request{
-				sourceFormat: "jpg",
-				targetFormat: "png",
-				ratio:        90,
+				formFileKey: "file",
+				filename:    "Screenshot_1.jpg",
+				params: map[string]string{
+					"sourceFormat": "jpg",
+					"targetFormat": "png",
+					"ratio":        "90",
+				},
 			},
-			mockBehavior: func(s *mockservice.MockImages, file multipart.File, request request) {
+			mockBehavior: func(s *mockservice.MockImages, p *mockservice.MockProducer, request request) {
 				s.EXPECT().
-					Convert(gomock.Any(), file, defaultFilename, request.sourceFormat,
-						request.targetFormat, request.ratio).
-					Return("1", "1", nil)
+					Convert(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+						gomock.Any(), gomock.Any()).Return("1", "1", nil)
+				p.EXPECT().
+					SendToQueue(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 			},
-			expectedStatusCode:   http.StatusOK,
+			expectedStatusCode:   http.StatusAccepted,
 			expectedResponseBody: `{"request_id":"1"}`,
+		},
+		{
+			name: "Invalid file form",
+			request: request{
+				formFileKey: "fill",
+				filename:    "Screenshot_1.jpg",
+				params: map[string]string{
+					"sourceFormat": "jpg",
+					"targetFormat": "png",
+					"ratio":        "90",
+				},
+			},
+			mockBehavior:         func(s *mockservice.MockImages, p *mockservice.MockProducer, request request) {},
+			expectedStatusCode:   http.StatusBadRequest,
+			expectedResponseBody: "can't get sourceFile from form\n",
+		},
+		{
+			name: "Invalid ration form value",
+			request: request{
+				formFileKey: "file",
+				filename:    "Screenshot_1.jpg",
+				params: map[string]string{
+					"sourceFormat": "jpg",
+					"targetFormat": "png",
+					"ratio":        "ratio_string_value",
+				},
+			},
+			mockBehavior:         func(s *mockservice.MockImages, p *mockservice.MockProducer, request request) {},
+			expectedStatusCode:   http.StatusBadRequest,
+			expectedResponseBody: "invalid ratio form value\n",
 		},
 	}
 
@@ -506,25 +542,19 @@ func TestServer_ConvertImage(t *testing.T) {
 			defer c.Finish()
 
 			is := mockservice.NewMockImages(c)
+			p := mockservice.NewMockProducer(c)
 
-			s := Server{imageService: is}
+			s := Server{imageService: is, producer: p}
 
 			r := mux.NewRouter()
 			r.HandleFunc("/conversion", s.ConvertImage).Methods("POST")
 
 			w := httptest.NewRecorder()
-			req, file := createMockRequest(t, "/conversion", "POST")
-			defer func() {
-				err := file.Close()
-				require.NoError(t, err)
-			}()
 
-			tc.mockBehavior(is, file, tc.request)
-			//q := req.URL.Query()
-			//q.Add("sourceFormat", tc.request.sourceFormat)
-			//q.Add("targetFormat", tc.request.targetFormat)
-			//q.Add("ratio", strconv.Itoa(tc.request.ratio))
-			//req.URL.RawQuery = q.Encode()
+			req := createMockRequest(t, tc.request.filename, tc.request.formFileKey, "/conversion", "POST", tc.request.params)
+			defer os.Remove(tc.request.filename)
+
+			tc.mockBehavior(is, p, tc.request)
 
 			r.ServeHTTP(w, req)
 

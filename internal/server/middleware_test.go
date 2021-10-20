@@ -18,9 +18,9 @@ import (
 func tempHandler(w http.ResponseWriter, r *http.Request) {
 	userID, ok := appcontext.UserIDFromContext(r.Context())
 	if !ok {
-		w.Write([]byte("cannot get user id"))
+		_, _ = w.Write([]byte("cannot get user id"))
 	}
-	w.Write([]byte(userID))
+	_, _ = w.Write([]byte(userID))
 }
 
 func TestServer_AuthMiddleware(t *testing.T) {
