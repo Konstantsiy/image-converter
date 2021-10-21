@@ -34,6 +34,13 @@ jobs:
           name: Run unit tests
           command: go test ./...
 
+      - store_artifacts:
+          path: $TEST_RESULTS
+          destination: raw-test-output
+
+      - store_test_results:
+          path: $TEST_RESULTS
+
   build:
     docker:
       - image: circleci/golang:1.16
@@ -60,6 +67,9 @@ jobs:
           key: v1-pkg-cache
           paths:
             - /home/circleci/go/pkg/mod
+
+
+
 
 
 workflows:
