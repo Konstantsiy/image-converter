@@ -4,8 +4,6 @@ package jwt
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
-	"os"
 	"time"
 
 	"github.com/Konstantsiy/image-converter/pkg/logger"
@@ -22,68 +20,46 @@ const (
 
 // TokenManager implements functionality for Access & Refresh tokens generation.
 type TokenManager struct {
-	publicKey  []byte
-	privateKey []byte
+	signingKey string
 }
 
 func NewTokenManager(conf *config.JWTConfig) (*TokenManager, error) {
-	curDir, err := os.Getwd()
-	if err != nil {
-		return nil, fmt.Errorf("can't get current directory path: %w", err)
+	if conf.SigningKey == "" {
+		return nil, fmt.Errorf("JWT configuration should not be empty")
 	}
 
-	privateKey, err := ioutil.ReadFile(curDir + conf.PrivateKeyPath)
-	if err != nil {
-		return nil, fmt.Errorf("can't read private key form file: %w", err)
-	}
-
-	publicKey, err := ioutil.ReadFile(curDir + conf.PublicKeyPath)
-	if err != nil {
-		return nil, fmt.Errorf("can't read public key form file: %w", err)
-	}
-
-	return &TokenManager{publicKey: publicKey, privateKey: privateKey}, nil
+	return &TokenManager{signingKey: conf.SigningKey}, nil
 }
 
 // GenerateAccessToken generates new access token.
 func (tm *TokenManager) GenerateAccessToken(userID string) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.StandardClaims{
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
 		Subject:   userID,
 		ExpiresAt: time.Now().Add(AccessTokenTimeout).Unix(),
 		IssuedAt:  time.Now().Unix(),
 	})
 
-	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM(tm.privateKey)
-	if err != nil {
-		return "", err
-	}
-
-	return token.SignedString(privateKey)
+	return token.SignedString([]byte(tm.signingKey))
 }
 
 // GenerateRefreshToken generates new refresh token.
 func (tm *TokenManager) GenerateRefreshToken() (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.StandardClaims{
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
 		ExpiresAt: time.Now().Add(RefreshTokenTimeout).Unix(),
 		IssuedAt:  time.Now().Unix(),
 	})
 
-	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM(tm.privateKey)
-	if err != nil {
-		return "", err
-	}
-
-	return token.SignedString(privateKey)
+	return token.SignedString([]byte(tm.signingKey))
 }
 
 //ParseToken parses the given token, checks it validity and returns the user ID.
 func (tm *TokenManager) ParseToken(accessToken string) (string, error) {
 	token, err := jwt.ParseWithClaims(accessToken, &jwt.StandardClaims{}, func(token *jwt.Token) (i interface{}, err error) {
-		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return jwt.ParseRSAPublicKeyFromPEM(tm.publicKey)
+		return []byte(tm.signingKey), nil
 	})
 	if err != nil || !token.Valid {
 		return "", fmt.Errorf("can't parse token: %w", err)
