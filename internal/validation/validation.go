@@ -36,6 +36,7 @@ var formats = map[string]struct{}{
 	"png": {},
 }
 
+// InvalidParameterError represents validation related error.
 type InvalidParameterError struct {
 	Param   string
 	Message string

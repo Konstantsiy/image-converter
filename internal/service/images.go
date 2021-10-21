@@ -23,6 +23,7 @@ type ImageService struct {
 	producer     *queue.RabbitMQProducer
 }
 
+// NewImageService creates new images service.
 func NewImageService(imagesRepo *repository.ImagesRepository, requestsRepo *repository.RequestsRepository, storage *storage.Storage, producer *queue.RabbitMQProducer) *ImageService {
 	return &ImageService{imagesRepo: imagesRepo, requestsRepo: requestsRepo, storage: storage, producer: producer}
 }

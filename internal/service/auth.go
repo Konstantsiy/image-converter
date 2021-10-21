@@ -18,6 +18,7 @@ type AuthService struct {
 	tm        *jwt.TokenManager
 }
 
+// NewAuthService creates new authorization service.
 func NewAuthService(repo *repository.UsersRepository, tm *jwt.TokenManager) *AuthService {
 	return &AuthService{usersRepo: repo, tm: tm}
 }

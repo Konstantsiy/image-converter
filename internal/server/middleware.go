@@ -11,9 +11,12 @@ import (
 )
 
 const (
-	AuthorizationHeader  = "Authorization"
+	// AuthorizationHeader named authorization header.
+	AuthorizationHeader = "Authorization"
+	// NeededSecurityScheme represents needed security scheme.
 	NeededSecurityScheme = "Bearer"
-	DefaultStatusCode    = 200
+	// DefaultStatusCode returned after every successful request in the logging middleware.
+	DefaultStatusCode = 200
 )
 
 // StatusRecorder contains a writer for storing the requests status code.

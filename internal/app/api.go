@@ -51,7 +51,7 @@ func Start() error {
 	}
 	logger.FromContext(context.Background()).Infoln("AWS S3 connected successfully")
 
-	producer, err := queue.NewProducer(conf.RabbitMQConf)
+	producer, err := queue.NewRabbitMQProducer(conf.RabbitMQConf)
 	if err != nil {
 		return fmt.Errorf("can't create producer: %w", err)
 	}

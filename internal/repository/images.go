@@ -7,6 +7,7 @@ import (
 	"fmt"
 )
 
+// ErrNoSuchImage notifies that needed image does not exist.
 var ErrNoSuchImage = errors.New("the image with this id does not exist")
 
 // ImagesRepository represents repository fro working with images.
@@ -14,6 +15,7 @@ type ImagesRepository struct {
 	db *sql.DB
 }
 
+// NewImagesRepository creates new images repository.
 func NewImagesRepository(db *sql.DB) *ImagesRepository {
 	return &ImagesRepository{db: db}
 }

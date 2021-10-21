@@ -12,7 +12,10 @@ import (
 )
 
 const (
-	ContentTypeKey   = "Content-Type"
+	// ContentTypeKey represents the MIME context type.
+	ContentTypeKey = "Content-Type"
+
+	// ContentTypeValue represents the MIME media type for JSON text.
 	ContentTypeValue = "application/json"
 )
 

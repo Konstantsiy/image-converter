@@ -8,14 +8,16 @@ import (
 	"github.com/streadway/amqp"
 )
 
+// MIMEContentType represents the content type of publishing message.
 const MIMEContentType = "application/json"
 
-// RabbitMQProducer sends messages to the queue for further processing.
+// RabbitMQProducer implements RabbitMQ queue producer.
 type RabbitMQProducer struct {
 	client *rabbitMQClient
 }
 
-func NewProducer(conf *config.RabbitMQConfig) (*RabbitMQProducer, error) {
+// NewRabbitMQProducer creates new RabbitMQ producer.
+func NewRabbitMQProducer(conf *config.RabbitMQConfig) (*RabbitMQProducer, error) {
 	client, err := initRabbitMQClient(conf)
 	if err != nil {
 		return nil, err

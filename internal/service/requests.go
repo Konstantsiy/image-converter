@@ -15,6 +15,7 @@ type RequestsService struct {
 	requestsRepo *repository.RequestsRepository
 }
 
+// NewRequestsService creates new requests service.
 func NewRequestsService(requestsRepo *repository.RequestsRepository) *RequestsService {
 	return &RequestsService{requestsRepo: requestsRepo}
 }

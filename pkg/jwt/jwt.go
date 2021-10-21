@@ -1,4 +1,4 @@
-// Package auth provides the logic for working with JWT tokens.
+// Package jwt provides the logic for working with JWT tokens.
 package jwt
 
 import (
@@ -14,7 +14,10 @@ import (
 )
 
 const (
-	AccessTokenTimeout  = 12 * time.Hour
+	// AccessTokenTimeout determines the validity period of the access token.
+	AccessTokenTimeout = 12 * time.Hour
+
+	// RefreshTokenTimeout 	// AccessTokenTimeout determines the validity period of the refresh token.
 	RefreshTokenTimeout = 48 * time.Hour
 )
 
@@ -23,6 +26,7 @@ type TokenManager struct {
 	signingKey string
 }
 
+// NewTokenManager creates new token manager.
 func NewTokenManager(conf *config.JWTConfig) (*TokenManager, error) {
 	if conf.SigningKey == "" {
 		return nil, fmt.Errorf("JWT configuration should not be empty")
@@ -52,7 +56,7 @@ func (tm *TokenManager) GenerateRefreshToken() (string, error) {
 	return token.SignedString([]byte(tm.signingKey))
 }
 
-//ParseToken parses the given token, checks it validity and returns the user ID.
+// ParseToken parses the given token, checks it validity and returns the user ID.
 func (tm *TokenManager) ParseToken(accessToken string) (string, error) {
 	token, err := jwt.ParseWithClaims(accessToken, &jwt.StandardClaims{}, func(token *jwt.Token) (i interface{}, err error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {

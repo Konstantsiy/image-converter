@@ -10,10 +10,14 @@ import (
 )
 
 var (
-	ErrNoSuchUser        = errors.New("the user with this email does not exist")
+	// ErrNoSuchUser notifies that the needed user does not exist.
+	ErrNoSuchUser = errors.New("the user with this email does not exist")
+
+	// ErrUserAlreadyExists notifies that a user with such an email already exists.
 	ErrUserAlreadyExists = errors.New("the user with the given email already exists")
 )
 
+// uniqueViolationCode represents an error code that such an entity already exists.
 const uniqueViolationCode = "23505"
 
 // User represents the user in the database.
@@ -28,6 +32,7 @@ type UsersRepository struct {
 	db *sql.DB
 }
 
+// NewUsersRepository creates new users repository.
 func NewUsersRepository(db *sql.DB) *UsersRepository {
 	return &UsersRepository{db: db}
 }

@@ -18,9 +18,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-const IDQueryKey = "id"
-
-// Server represents application server.
+// Server implements application server.
 type Server struct {
 	authService     service.Authorization
 	imageService    service.Images
@@ -28,6 +26,7 @@ type Server struct {
 	producer        queue.Producer
 }
 
+// NewServer creates new application server.
 func NewServer(authService service.Authorization, imageService service.Images, requestsService service.Requests, producer queue.Producer) *Server {
 	return &Server{
 		authService:     authService,
@@ -161,7 +160,7 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 
 // DownloadImage allows you to download original/converted image by id.
 func (s *Server) DownloadImage(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get(IDQueryKey)
+	id := r.URL.Query().Get("id")
 	if id == "" {
 		reportErrorWithCode(w, fmt.Errorf("image id is missing in parameters"), http.StatusBadRequest)
 		return

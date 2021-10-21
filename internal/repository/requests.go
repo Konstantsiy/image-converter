@@ -8,12 +8,18 @@ import (
 	"time"
 )
 
+// ErrNoSuchRequest notifies that needed request does not exist.
 var ErrNoSuchRequest = errors.New("request with this id does not exists")
 
 const (
+	// RequestStatusProcessing represents that the request is being processed.
 	RequestStatusProcessing = "processing"
-	RequestStatusFailed     = "failed"
-	RequestStatusDone       = "done"
+
+	// RequestStatusFailed represents failed request.
+	RequestStatusFailed = "failed"
+
+	//RequestStatusDone represents a successfully processed request.
+	RequestStatusDone = "done"
 )
 
 // ConversionRequest represents conversion request in the database.
@@ -35,6 +41,7 @@ type RequestsRepository struct {
 	db *sql.DB
 }
 
+// NewRequestsRepository creates new requests repository.
 func NewRequestsRepository(db *sql.DB) *RequestsRepository {
 	return &RequestsRepository{db: db}
 }

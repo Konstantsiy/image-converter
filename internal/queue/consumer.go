@@ -23,7 +23,8 @@ type RabbitMQConsumer struct {
 	storage      *storage.Storage
 }
 
-func NewConsumer(requestsRepo *repository.RequestsRepository, imagesRepo *repository.ImagesRepository, storage *storage.Storage, conf *config.RabbitMQConfig) (*RabbitMQConsumer, error) {
+// NewRabbitMQConsumer creates new RabbitMQ queue consumer.
+func NewRabbitMQConsumer(requestsRepo *repository.RequestsRepository, imagesRepo *repository.ImagesRepository, storage *storage.Storage, conf *config.RabbitMQConfig) (*RabbitMQConsumer, error) {
 	client, err := initRabbitMQClient(conf)
 	if err != nil {
 		return nil, err

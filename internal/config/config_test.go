@@ -20,8 +20,6 @@ func TestLoad(t *testing.T) {
 	os.Setenv("DB_PORT", "5432")
 	os.Setenv("DB_SSL_MODE", "disable")
 
-	os.Setenv("JWT_PUBLIC_KEY", "123456789")
-	os.Setenv("JWT_PRIVATE_KEY", "1234567")
 	os.Setenv("JWT_SIGNING_KEY", "sdfgsdhfghsdgfhsdgfhsgdfhsdgfhsdgfh")
 
 	os.Setenv("AWS_REGION", "eu-central-1")

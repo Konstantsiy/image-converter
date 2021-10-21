@@ -12,6 +12,7 @@ import (
 	"github.com/Konstantsiy/image-converter/internal/storage"
 )
 
+// StartListener starts the queue listener.
 func StartListener() error {
 	conf, err := config.Load()
 	if err != nil {
@@ -36,7 +37,7 @@ func StartListener() error {
 	imageRepo := repository.NewImagesRepository(db)
 	requestsRepo := repository.NewRequestsRepository(db)
 
-	consumer, err := queue.NewConsumer(requestsRepo, imageRepo, st, conf.RabbitMQConf)
+	consumer, err := queue.NewRabbitMQConsumer(requestsRepo, imageRepo, st, conf.RabbitMQConf)
 	if err != nil {
 		return fmt.Errorf("can't create consumer: %w", err)
 	}
