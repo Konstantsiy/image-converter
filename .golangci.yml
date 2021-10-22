@@ -24,11 +24,13 @@ linters:
     - gofmt
     - goimports
     - gocyclo
+    - gocritic
     - govet
     - unused
     - prealloc
     - bodyclose
     - whitespace
+
   disable:
     - errcheck
 

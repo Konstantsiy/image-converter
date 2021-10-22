@@ -19,13 +19,13 @@ import (
 type ImageService struct {
 	imagesRepo   *repository.ImagesRepository
 	requestsRepo *repository.RequestsRepository
-	storage      *storage.Storage
+	s3           *storage.Storage
 	producer     *queue.RabbitMQProducer
 }
 
 // NewImageService creates new images service.
-func NewImageService(imagesRepo *repository.ImagesRepository, requestsRepo *repository.RequestsRepository, storage *storage.Storage, producer *queue.RabbitMQProducer) *ImageService {
-	return &ImageService{imagesRepo: imagesRepo, requestsRepo: requestsRepo, storage: storage, producer: producer}
+func NewImageService(imagesRepo *repository.ImagesRepository, requestsRepo *repository.RequestsRepository, s3 *storage.Storage, producer *queue.RabbitMQProducer) *ImageService {
+	return &ImageService{imagesRepo: imagesRepo, requestsRepo: requestsRepo, s3: s3, producer: producer}
 }
 
 // Convert converts needed image according to the request.
@@ -44,14 +44,14 @@ func (is *ImageService) Convert(ctx context.Context, sourceFile multipart.File, 
 	logger.FromContext(ctx).WithField("file_id", sourceFileID).
 		Infoln("original file successfully saved in the database")
 
-	err = is.storage.UploadFile(sourceFile, sourceFileID)
+	err = is.s3.UploadFile(sourceFile, sourceFileID)
 	if err != nil {
 		return "", "", &ServiceError{
-			fmt.Errorf("storage error: %w", err),
+			fmt.Errorf("s3 error: %w", err),
 			http.StatusInternalServerError}
 	}
 	logger.FromContext(ctx).WithField("file_id", sourceFileID).
-		Infoln("original file successfully uploaded to the S3 storage")
+		Infoln("original file successfully uploaded to the S3 s3")
 
 	requestID, err := is.requestsRepo.InsertRequest(ctx, userID, sourceFileID, sourceFormat, targetFormat, ratio)
 	if err != nil {
@@ -83,7 +83,7 @@ func (is *ImageService) Download(ctx context.Context, id string) (string, error)
 		return "", &ServiceError{err, http.StatusInternalServerError}
 	}
 
-	url, err := is.storage.GetDownloadURL(imageID)
+	url, err := is.s3.GetDownloadURL(imageID)
 	if err != nil {
 		return "", &ServiceError{err, http.StatusInternalServerError}
 	}

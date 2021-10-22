@@ -63,7 +63,7 @@ func (s *Server) AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		if len(authHeaderParts[1]) == 0 {
+		if authHeaderParts[1] == "" {
 			reportErrorWithCode(w, fmt.Errorf("token is empty"), http.StatusUnauthorized)
 			return
 		}

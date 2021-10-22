@@ -20,16 +20,16 @@ type RabbitMQConsumer struct {
 	client       *rabbitMQClient
 	requestsRepo *repository.RequestsRepository
 	imagesRepo   *repository.ImagesRepository
-	storage      *storage.Storage
+	s3           *storage.Storage
 }
 
 // NewRabbitMQConsumer creates new RabbitMQ queue consumer.
-func NewRabbitMQConsumer(requestsRepo *repository.RequestsRepository, imagesRepo *repository.ImagesRepository, storage *storage.Storage, conf *config.RabbitMQConfig) (*RabbitMQConsumer, error) {
+func NewRabbitMQConsumer(requestsRepo *repository.RequestsRepository, imagesRepo *repository.ImagesRepository, s3 *storage.Storage, conf *config.RabbitMQConfig) (*RabbitMQConsumer, error) {
 	client, err := initRabbitMQClient(conf)
 	if err != nil {
 		return nil, err
 	}
-	return &RabbitMQConsumer{requestsRepo: requestsRepo, imagesRepo: imagesRepo, storage: storage, client: client}, nil
+	return &RabbitMQConsumer{requestsRepo: requestsRepo, imagesRepo: imagesRepo, s3: s3, client: client}, nil
 }
 
 // Listen listens to the queue channel in a separate goroutine.
@@ -92,12 +92,12 @@ func (c *RabbitMQConsumer) consumeFromQueue(ctx context.Context, msg *amqp.Deliv
 
 // process processes the current message from the queue.
 func (c *RabbitMQConsumer) process(ctx context.Context, data queueMessage) error {
-	sourceFile, err := c.storage.DownloadFile(data.FileID)
+	sourceFile, err := c.s3.DownloadFile(data.FileID)
 	if err != nil {
-		return fmt.Errorf("storage error: %w", err)
+		return fmt.Errorf("s3 error: %w", err)
 	}
 	logger.FromContext(ctx).WithField("file_id", data.FileID).
-		Infoln("original file successfully downloaded from the S3 storage")
+		Infoln("original file successfully downloaded from the S3 s3")
 
 	targetFile, err := converter.Convert(sourceFile, data.TargetFormat, data.Ratio)
 	if err != nil {
@@ -120,12 +120,12 @@ func (c *RabbitMQConsumer) process(ctx context.Context, data queueMessage) error
 	logger.FromContext(ctx).WithField("file_id", targetFileID).
 		Infoln("converted file successfully saved in the database")
 
-	err = c.storage.UploadFile(targetFile, targetFileID)
+	err = c.s3.UploadFile(targetFile, targetFileID)
 	if err != nil {
-		return fmt.Errorf("storage error: %w", err)
+		return fmt.Errorf("s3 error: %w", err)
 	}
 	logger.FromContext(ctx).WithField("file_id", targetFileID).
-		Infoln("converted file successfully uploaded to the S3 storage")
+		Infoln("converted file successfully uploaded to the S3 s3")
 
 	err = c.requestsRepo.UpdateRequest(ctx, data.RequestID, repository.RequestStatusDone, targetFileID)
 	if err != nil {

@@ -18,7 +18,7 @@ const (
 	// RequestStatusFailed represents failed request.
 	RequestStatusFailed = "failed"
 
-	//RequestStatusDone represents a successfully processed request.
+	// RequestStatusDone represents a successfully processed request.
 	RequestStatusDone = "done"
 )
 

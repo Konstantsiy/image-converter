@@ -95,7 +95,7 @@ func ValidateSignUpRequest(email, password string) error {
 
 // ValidateConversionRequest validates data from the conversion request body.
 func ValidateConversionRequest(filename, sourceFormat, targetFormat string, ratio int) error {
-	if len(filename) == 0 {
+	if filename == "" {
 		return &InvalidParameterError{
 			Param:   "filename",
 			Message: "shouldn't be empty",
