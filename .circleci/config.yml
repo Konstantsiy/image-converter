@@ -68,6 +68,7 @@ jobs:
           paths:
             - /home/circleci/go/pkg/mod
 
+  deploy:
 
 
 
