@@ -8,8 +8,6 @@ import (
 	"github.com/Konstantsiy/image-converter/internal/repository"
 )
 
-//go:generate mockgen -source=service.go -destination=mock/mock.go
-
 // ServiceError represents service related error.
 type ServiceError struct {
 	Err        error

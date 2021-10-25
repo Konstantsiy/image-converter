@@ -42,7 +42,6 @@ func StartListener() error {
 	requestsRepo, err := repository.NewRequestsRepository(db)
 	if err != nil {
 		return fmt.Errorf("requests repository creating error: %w", err)
-
 	}
 
 	consumer, err := queue.NewRabbitMQConsumer(requestsRepo, imageRepo, st, conf.RabbitMQConf)
