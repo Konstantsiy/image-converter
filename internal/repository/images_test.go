@@ -2,12 +2,52 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/DATA-DOG/go-sqlmock"
 )
+
+func TestNewImagesRepository(t *testing.T) {
+	mockDB, _, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("an error '%v' was not expected when opening a stub database connection", err)
+	}
+
+	testTable := []struct {
+		name            string
+		mockDB          *sql.DB
+		isErrorExpected bool
+		expectedError   error
+	}{
+		{
+			name:            "Ok",
+			mockDB:          mockDB,
+			isErrorExpected: false,
+		},
+		{
+			name:            "Empty SQL driver",
+			mockDB:          nil,
+			isErrorExpected: true,
+			expectedError:   ErrEmptySQLDriver,
+		},
+	}
+
+	for _, tc := range testTable {
+		t.Run(tc.name, func(t *testing.T) {
+			_, resultErr := NewImagesRepository(tc.mockDB)
+			if tc.isErrorExpected {
+				assert.Equal(t, resultErr, tc.expectedError)
+			} else {
+				assert.NoError(t, resultErr)
+			}
+		})
+	}
+}
 
 func TestImagesRepository_InsertImage(t *testing.T) {
 	db, mock, err := sqlmock.New()
@@ -21,8 +61,10 @@ func TestImagesRepository_InsertImage(t *testing.T) {
 		format   string
 	}
 
-	imagesRepo := NewImagesRepository(db)
-	const query = "insert into converter.images (.+) returning id"
+	imagesRepo, err := NewImagesRepository(db)
+	require.NoError(t, err)
+
+	const query = "INSERT INTO converter.images (.+) RETURNING id"
 
 	testTable := []struct {
 		name            string
@@ -30,6 +72,7 @@ func TestImagesRepository_InsertImage(t *testing.T) {
 		expectedImageID string
 		mockBehavior    func(input)
 		isErrorExpected bool
+		expectedError   error
 	}{
 		{
 			name: "Ok",
@@ -65,7 +108,9 @@ func TestImagesRepository_InsertImage(t *testing.T) {
 	for _, tc := range testTable {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.mockBehavior(tc.args)
+
 			result, err := imagesRepo.InsertImage(context.TODO(), tc.args.filename, tc.args.format)
+
 			if tc.isErrorExpected {
 				assert.Error(t, err)
 			} else {
@@ -88,8 +133,10 @@ func TestImagesRepository_GetImageIDByUserID(t *testing.T) {
 		imageID string
 	}
 
-	imageRepo := NewImagesRepository(db)
-	const query = `select (.*)`
+	imageRepo, err := NewImagesRepository(db)
+	require.NoError(t, err)
+
+	const query = `SELECT (.*)`
 
 	testTable := []struct {
 		name            string

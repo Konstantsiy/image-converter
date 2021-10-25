@@ -2,11 +2,51 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestNewUsersRepository(t *testing.T) {
+	mockDB, _, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("an error '%v' was not expected when opening a stub database connection", err)
+	}
+
+	testTable := []struct {
+		name            string
+		mockDB          *sql.DB
+		isErrorExpected bool
+		expectedError   error
+	}{
+		{
+			name:            "Ok",
+			mockDB:          mockDB,
+			isErrorExpected: false,
+		},
+		{
+			name:            "Empty SQL driver",
+			mockDB:          nil,
+			isErrorExpected: true,
+			expectedError:   ErrEmptySQLDriver,
+		},
+	}
+
+	for _, tc := range testTable {
+		t.Run(tc.name, func(t *testing.T) {
+			_, resultErr := NewUsersRepository(tc.mockDB)
+			if tc.isErrorExpected {
+				assert.Equal(t, resultErr, tc.expectedError)
+			} else {
+				assert.NoError(t, resultErr)
+			}
+		})
+	}
+}
 
 func TestUsersRepository_InsertUser(t *testing.T) {
 	db, mock, err := sqlmock.New()
@@ -20,8 +60,9 @@ func TestUsersRepository_InsertUser(t *testing.T) {
 		password string
 	}
 
-	usersRepo := NewUsersRepository(db)
-	const query = "insert into converter.users (.+) returning id"
+	usersRepo, err := NewUsersRepository(db)
+	require.NoError(t, err)
+	const query = "INSERT INTO converter.users (.+) RETURNING id"
 
 	testTable := []struct {
 		name            string
@@ -97,8 +138,9 @@ func TestUsersRepository_GetUserByEmail(t *testing.T) {
 	}
 	defer db.Close()
 
-	usersRepo := NewUsersRepository(db)
-	const query = "select (.+) from converter.users where (.+)"
+	usersRepo, err := NewUsersRepository(db)
+	require.NoError(t, err)
+	const query = "SELECT (.+) FROM converter.users WHERE (.+)"
 
 	testTable := []struct {
 		name            string

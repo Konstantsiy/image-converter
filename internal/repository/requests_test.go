@@ -2,12 +2,52 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestNewRequestsRepository(t *testing.T) {
+	mockDB, _, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("an error '%v' was not expected when opening a stub database connection", err)
+	}
+
+	testTable := []struct {
+		name            string
+		mockDB          *sql.DB
+		isErrorExpected bool
+		expectedError   error
+	}{
+		{
+			name:            "Ok",
+			mockDB:          mockDB,
+			isErrorExpected: false,
+		},
+		{
+			name:            "Empty SQL driver",
+			mockDB:          nil,
+			isErrorExpected: true,
+			expectedError:   ErrEmptySQLDriver,
+		},
+	}
+
+	for _, tc := range testTable {
+		t.Run(tc.name, func(t *testing.T) {
+			_, resultErr := NewRequestsRepository(tc.mockDB)
+			if tc.isErrorExpected {
+				assert.Equal(t, resultErr, tc.expectedError)
+			} else {
+				assert.NoError(t, resultErr)
+			}
+		})
+	}
+}
 
 func TestRequestsRepository_InsertRequest(t *testing.T) {
 	db, mock, err := sqlmock.New()
@@ -24,8 +64,10 @@ func TestRequestsRepository_InsertRequest(t *testing.T) {
 		ratio        int
 	}
 
-	requestsRepo := NewRequestsRepository(db)
-	const query = `insert into converter.requests (.*)`
+	requestsRepo, err := NewRequestsRepository(db)
+	require.NoError(t, err)
+
+	const query = `INSERT INTO converter.requests (.*)`
 
 	testTable := []struct {
 		name              string
@@ -99,8 +141,10 @@ func TestRequestsRepository_UpdateRequest(t *testing.T) {
 		targetID  string
 	}
 
-	requestsRepo := NewRequestsRepository(db)
-	const query = `update converter.requests set (.+)`
+	requestsRepo, err := NewRequestsRepository(db)
+	require.NoError(t, err)
+
+	const query = `UPDATE converter.requests SET (.+)`
 
 	testTable := []struct {
 		name            string
