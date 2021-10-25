@@ -57,11 +57,22 @@ func TestServer_LogIn(t *testing.T) {
 			expectedResponseBody: `{"access_token":"token1","refresh_token":"token2"}`,
 		},
 		{
-			name:        "Empty field",
+			name:        "Empty email",
 			requestBody: `{"email": "","password": "Password1"}`,
 			request: request{
-				email:    "email1@gmail.com",
+				email:    "",
 				password: "Password1",
+			},
+			mockBehavior:         func(s *mockservice.MockAuthorization, req request) {},
+			expectedStatusCode:   http.StatusBadRequest,
+			expectedResponseBody: "empty field\n",
+		},
+		{
+			name:        "Empty password",
+			requestBody: `{"email": "email1@gmail.com","password": ""}`,
+			request: request{
+				email:    "email1@gmail.com",
+				password: "",
 			},
 			mockBehavior:         func(s *mockservice.MockAuthorization, req request) {},
 			expectedStatusCode:   http.StatusBadRequest,
