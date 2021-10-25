@@ -57,9 +57,20 @@ func Start() error {
 	}
 	logger.FromContext(context.Background()).Infoln("RabbitMQ client (producer) initialized successfully")
 
-	usersRepo := repository.NewUsersRepository(db)
-	imageRepo := repository.NewImagesRepository(db)
-	requestsRepo := repository.NewRequestsRepository(db)
+	usersRepo, err := repository.NewUsersRepository(db)
+	if err != nil {
+		return fmt.Errorf("users repository creating error: %w", err)
+	}
+
+	imageRepo, err := repository.NewImagesRepository(db)
+	if err != nil {
+		return fmt.Errorf("images repository creating error: %w", err)
+	}
+
+	requestsRepo, err := repository.NewRequestsRepository(db)
+	if err != nil {
+		return fmt.Errorf("requests repository creating error: %w", err)
+	}
 
 	authService := service.NewAuthService(usersRepo, tokenManager)
 	imagesService := service.NewImageService(imageRepo, requestsRepo, st, producer)

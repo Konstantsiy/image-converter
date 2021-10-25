@@ -34,8 +34,16 @@ func StartListener() error {
 	}
 	logger.FromContext(context.Background()).Infoln("AWS S3 connected successfully")
 
-	imageRepo := repository.NewImagesRepository(db)
-	requestsRepo := repository.NewRequestsRepository(db)
+	imageRepo, err := repository.NewImagesRepository(db)
+	if err != nil {
+		return fmt.Errorf("images repository creating error: %w", err)
+	}
+
+	requestsRepo, err := repository.NewRequestsRepository(db)
+	if err != nil {
+		return fmt.Errorf("requests repository creating error: %w", err)
+
+	}
 
 	consumer, err := queue.NewRabbitMQConsumer(requestsRepo, imageRepo, st, conf.RabbitMQConf)
 	if err != nil {

@@ -33,14 +33,17 @@ type UsersRepository struct {
 }
 
 // NewUsersRepository creates new users repository.
-func NewUsersRepository(db *sql.DB) *UsersRepository {
-	return &UsersRepository{db: db}
+func NewUsersRepository(db *sql.DB) (*UsersRepository, error) {
+	if db == nil {
+		return nil, ErrEmptySQLDriver
+	}
+	return &UsersRepository{db: db}, nil
 }
 
 // InsertUser inserts the user into users table and returns user id.
 func (ur *UsersRepository) InsertUser(ctx context.Context, email, password string) (string, error) {
 	var userID string
-	const query = "insert into converter.users (email, password) values ($1, $2) returning id;"
+	const query = "INSERT INTO converter.users (email, password) VALUES ($1, $2) RETURNING id;"
 
 	err := ur.db.QueryRowContext(ctx, query, email, password).Scan(&userID)
 	if err, ok := err.(*pq.Error); ok && err.Code == uniqueViolationCode {
@@ -56,7 +59,7 @@ func (ur *UsersRepository) InsertUser(ctx context.Context, email, password strin
 // GetUserByEmail gets the information about the user by given email.
 func (ur *UsersRepository) GetUserByEmail(ctx context.Context, email string) (User, error) {
 	var user User
-	const query = "select id, email, password from converter.users where email = $1;"
+	const query = "SELECT id, email, password FROM converter.users WHERE email = $1;"
 
 	err := ur.db.QueryRowContext(ctx, query, email).Scan(&user.ID, &user.Email, &user.Password)
 	if err == sql.ErrNoRows {

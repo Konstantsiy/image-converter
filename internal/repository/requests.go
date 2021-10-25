@@ -42,17 +42,20 @@ type RequestsRepository struct {
 }
 
 // NewRequestsRepository creates new requests repository.
-func NewRequestsRepository(db *sql.DB) *RequestsRepository {
-	return &RequestsRepository{db: db}
+func NewRequestsRepository(db *sql.DB) (*RequestsRepository, error) {
+	if db == nil {
+		return nil, ErrEmptySQLDriver
+	}
+	return &RequestsRepository{db: db}, nil
 }
 
 // InsertRequest creates the conversion request and returns its id.
 func (rr *RequestsRepository) InsertRequest(ctx context.Context, userID, sourceID, sourceFormat, targetFormat string, ratio int) (string, error) {
 	var requestID string
-	const query = `insert into converter.requests 
+	const query = `INSERT INTO converter.requests 
 		(user_id, source_id, target_id, source_format, target_format, ratio, status)
-		values ($1, $2, NULL, $3, $4, $5, 'queued') 
-		returning id;`
+		VALUES ($1, $2, NULL, $3, $4, $5, 'queued') 
+		RETURNING id;`
 
 	err := rr.db.QueryRowContext(ctx, query, userID, sourceID, sourceFormat, targetFormat, ratio).Scan(&requestID)
 	if err != nil {
@@ -67,8 +70,8 @@ func (rr *RequestsRepository) GetRequestsByUserID(ctx context.Context, userID st
 	var requests []ConversionRequest
 	var request ConversionRequest
 	var targetIDNull sql.NullString
-	const query = `select id, user_id, source_id, target_id, source_format, target_format, ratio, status, created, updated
-		from converter.requests where user_id = $1;`
+	const query = `SELECT id, user_id, source_id, target_id, source_format, target_format, ratio, status, created, updated
+		FROM converter.requests WHERE user_id = $1;`
 
 	rows, err := rr.db.QueryContext(ctx, query, userID)
 	if err != nil {
@@ -113,7 +116,7 @@ func (rr *RequestsRepository) UpdateRequest(ctx context.Context, requestID, stat
 		sqlTargetID = sql.NullString{String: targetID, Valid: true}
 	}
 
-	const query = "update converter.requests set target_id=$2, status=$3, updated=default where id=$1;"
+	const query = "UPDATE converter.requests SET target_id=$2, status=$3, updated=default WHERE id=$1;"
 	res, err := rr.db.ExecContext(ctx, query, requestID, sqlTargetID, status)
 	if err != nil {
 		return fmt.Errorf("can't update request: %w", err)

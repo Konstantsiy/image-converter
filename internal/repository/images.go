@@ -7,8 +7,12 @@ import (
 	"fmt"
 )
 
-// ErrNoSuchImage notifies that needed image does not exist.
-var ErrNoSuchImage = errors.New("the image with this id does not exist")
+var (
+	// ErrNoSuchImage notifies that needed image does not exist.
+	ErrNoSuchImage = errors.New("the image with this id does not exist")
+	// ErrEmptySQLDriver notifies that an empty driver is passed to the constructor.
+	ErrEmptySQLDriver = errors.New("the SQL-driver for the constructor must not be nil")
+)
 
 // ImagesRepository represents repository fro working with images.
 type ImagesRepository struct {
@@ -16,14 +20,17 @@ type ImagesRepository struct {
 }
 
 // NewImagesRepository creates new images repository.
-func NewImagesRepository(db *sql.DB) *ImagesRepository {
-	return &ImagesRepository{db: db}
+func NewImagesRepository(db *sql.DB) (*ImagesRepository, error) {
+	if db == nil {
+		return nil, ErrEmptySQLDriver
+	}
+	return &ImagesRepository{db: db}, nil
 }
 
 // InsertImage inserts the image into images table and returns image id.
 func (ir *ImagesRepository) InsertImage(ctx context.Context, filename, format string) (string, error) {
 	var imageID string
-	const query = "insert into converter.images (name, format) values ($1, $2) returning id;"
+	const query = "INSERT INTO converter.images (name, format) VALUES ($1, $2) RETURNING id;"
 
 	err := ir.db.QueryRowContext(ctx, query, filename, format).Scan(&imageID)
 	if err != nil {
@@ -36,11 +43,11 @@ func (ir *ImagesRepository) InsertImage(ctx context.Context, filename, format st
 // GetImageIDByUserID returns the image id to the storage.
 func (ir *ImagesRepository) GetImageIDByUserID(ctx context.Context, userID, imageID string) (string, error) {
 	var resImageID string
-	const query = `select i.id from converter.requests r
-    	join converter.images i
-    	on i.id = $2
-    	and (r.source_id = i.id or r.target_id = i.id)
-    	and r.user_id = $1;`
+	const query = `SELECT i.id FROM converter.requests r
+    JOIN converter.images i
+    ON i.id = $2
+    AND (r.source_id = i.id OR r.target_id = i.id)
+    AND r.user_id = $1;`
 
 	err := ir.db.QueryRowContext(ctx, query, userID, imageID).Scan(&resImageID)
 	if err == sql.ErrNoRows {
