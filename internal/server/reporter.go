@@ -6,19 +6,24 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/Konstantsiy/image-converter/internal/service"
+
 	"github.com/Konstantsiy/image-converter/pkg/logger"
 )
 
 const (
-	ContentTypeKey   = "Content-Type"
+	// ContentTypeKey represents the MIME context type.
+	ContentTypeKey = "Content-Type"
+	// ContentTypeValue represents the MIME media type for JSON text.
 	ContentTypeValue = "application/json"
 )
 
-// sendResponse marshals and writes response to the ResponseWriter.
+// sendResponse marshals and writes loginResponse to the ResponseWriter.
 func sendResponse(w http.ResponseWriter, resp interface{}, statusCode int) {
 	respJSON, err := json.Marshal(resp)
 	if err != nil {
-		logger.FromContext(context.Background()).Errorln(fmt.Errorf("can't marshal response: %v", err))
+		logger.FromContext(context.Background()).Errorln(fmt.Errorf("can't marshal loginResponse: %v", err))
+
 		fmt.Fprint(w, resp)
 		return
 	}
@@ -27,12 +32,21 @@ func sendResponse(w http.ResponseWriter, resp interface{}, statusCode int) {
 	w.Header().Set(ContentTypeKey, ContentTypeValue)
 	_, err = w.Write(respJSON)
 	if err != nil {
-		reportError(w, fmt.Errorf("can't write HTTP reply: %w", err), http.StatusInternalServerError)
+		reportErrorWithCode(w, fmt.Errorf("can't write HTTP reply: %w", err), http.StatusInternalServerError)
 	}
 }
 
-// reportError logs and writes an error with the corresponding HTTP code to the ResponseWriter.
-func reportError(w http.ResponseWriter, err error, statusCode int) {
+// reportErrorWithCode logs and writes an error with the corresponding HTTP code to the ResponseWriter.
+func reportErrorWithCode(w http.ResponseWriter, err error, statusCode int) {
 	logger.FromContext(context.Background()).Errorln(err)
 	http.Error(w, err.Error(), statusCode)
+}
+
+// reportError reports custom service error.
+func reportError(w http.ResponseWriter, err error) {
+	subErr, ok := err.(*service.ServiceError)
+	if !ok {
+		reportErrorWithCode(w, err, http.StatusInternalServerError)
+	}
+	reportErrorWithCode(w, subErr.Err, subErr.StatusCode)
 }

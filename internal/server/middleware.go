@@ -10,6 +10,15 @@ import (
 	"github.com/Konstantsiy/image-converter/pkg/logger"
 )
 
+const (
+	// AuthorizationHeader named authorization header.
+	AuthorizationHeader = "Authorization"
+	// NeededSecurityScheme represents needed security scheme.
+	NeededSecurityScheme = "Bearer"
+	// DefaultStatusCode returned after every successful request in the logging middleware.
+	DefaultStatusCode = 200
+)
+
 // StatusRecorder contains a writer for storing the requests status code.
 type StatusRecorder struct {
 	http.ResponseWriter
@@ -44,25 +53,25 @@ func (s *Server) AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get(AuthorizationHeader)
 		if authHeader == "" {
-			reportError(w, fmt.Errorf("empty auth handler"), http.StatusUnauthorized)
+			reportErrorWithCode(w, fmt.Errorf("empty auth handler"), http.StatusUnauthorized)
 			return
 		}
 
 		authHeaderParts := strings.Split(authHeader, " ")
 		if len(authHeaderParts) != 2 || authHeaderParts[0] != NeededSecurityScheme {
-			reportError(w, fmt.Errorf("invalid auth handler"), http.StatusUnauthorized)
+			reportErrorWithCode(w, fmt.Errorf("invalid auth handler"), http.StatusUnauthorized)
 			return
 		}
 
-		if len(authHeaderParts[1]) == 0 {
-			reportError(w, fmt.Errorf("token is empty"), http.StatusUnauthorized)
+		if authHeaderParts[1] == "" {
+			reportErrorWithCode(w, fmt.Errorf("token is empty"), http.StatusUnauthorized)
 			return
 		}
 
 		token := authHeaderParts[1]
-		claimsUserID, err := s.tokenManager.ParseToken(token)
+		claimsUserID, err := s.authService.ParseToken(token)
 		if err != nil {
-			reportError(w, fmt.Errorf("can't parse JWT: %w", err), http.StatusUnauthorized)
+			reportErrorWithCode(w, fmt.Errorf("can't parse JWT: %w", err), http.StatusUnauthorized)
 			return
 		}
 

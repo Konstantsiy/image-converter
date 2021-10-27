@@ -16,6 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
+// URLTimeout determines the validity period of the downloaded image URL.
 const URLTimeout = 10 * time.Minute
 
 // Storage implements the functionality of file storage (Amazon S3).

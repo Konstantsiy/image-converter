@@ -21,11 +21,19 @@ services:
       - 15672:15672 # HTTP management UI
     volumes:
       - ./docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+<<<<<<< HEAD
 #    healthcheck:
 #      test: [ "CMD", "curl", "-f", "http://localhost:5672" ]
 #      interval: 30s
 #      timeout: 10s
 #      retries: 5
+=======
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5672" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+>>>>>>> a89570febbf4abaca4a6b03b66bd290dce23f736
 
   api:
     build:

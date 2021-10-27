@@ -25,8 +25,7 @@ type AWSConfig struct {
 
 // JWTConfig required for configuring work with JWT.
 type JWTConfig struct {
-	PublicKeyPath  string `envconfig:"PUBLIC_KEY_PATH"`
-	PrivateKeyPath string `envconfig:"PRIVATE_KEY_PATH"`
+	SigningKey string `envconfig:"SIGNING_KEY"`
 }
 
 // RabbitMQConfig required to configure the RabbitMQ.

@@ -13,8 +13,10 @@ import (
 type key int
 
 const (
-	loggerKey              key = 1
-	DefaultTimestampFormat     = "2006-01-02 15:04:05"
+	// loggerKey represents logger key for context.
+	loggerKey key = 1
+	// DefaultTimestampFormat represents the timestamp format in the logger.
+	DefaultTimestampFormat = "2006-01-02 15:04:05"
 )
 
 var defaultLogger = &log.Logger{

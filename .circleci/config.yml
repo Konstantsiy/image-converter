@@ -68,10 +68,6 @@ jobs:
           paths:
             - /home/circleci/go/pkg/mod
 
-  deploy:
-
-
-
 
 workflows:
   version: 2

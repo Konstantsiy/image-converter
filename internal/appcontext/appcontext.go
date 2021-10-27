@@ -1,7 +1,9 @@
 // Package appcontext provides functions for working with application context.
 package appcontext
 
-import "context"
+import (
+	"context"
+)
 
 type key int
 

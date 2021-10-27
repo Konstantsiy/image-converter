@@ -20,8 +20,7 @@ func TestLoad(t *testing.T) {
 	os.Setenv("DB_PORT", "5432")
 	os.Setenv("DB_SSL_MODE", "disable")
 
-	os.Setenv("JWT_PUBLIC_KEY_PATH", "123456789")
-	os.Setenv("JWT_PRIVATE_KEY_PATH", "1234567")
+	os.Setenv("JWT_SIGNING_KEY", "sdfgsdhfghsdgfhsdgfhsgdfhsdgfhsdgfh")
 
 	os.Setenv("AWS_REGION", "eu-central-1")
 	os.Setenv("AWS_ACCESS_KEY_ID", "SGFHSGDHFSGF")
@@ -45,8 +44,7 @@ func TestLoad(t *testing.T) {
 			SSLMode:  "disable",
 		},
 		JWTConf: &JWTConfig{
-			PublicKeyPath:  "123456789",
-			PrivateKeyPath: "1234567",
+			SigningKey: "sdfgsdhfghsdgfhsdgfhsgdfhsdgfhsdgfh",
 		},
 		AWSConf: &AWSConfig{
 			Region:          "eu-central-1",
