@@ -1,10 +1,12 @@
-// Package auth provides the logic for working with JWT tokens.
+// Package jwt provides the logic for working with JWT tokens.
 package jwt
 
 import (
+	"context"
 	"fmt"
-	"io/ioutil"
 	"time"
+
+	"github.com/Konstantsiy/image-converter/pkg/logger"
 
 	"github.com/Konstantsiy/image-converter/internal/config"
 
@@ -12,27 +14,25 @@ import (
 )
 
 const (
-	AccessTokenTimeout  = 12 * time.Hour
+	// AccessTokenTimeout determines the validity period of the access token.
+	AccessTokenTimeout = 12 * time.Hour
+
+	// RefreshTokenTimeout 	// AccessTokenTimeout determines the validity period of the refresh token.
 	RefreshTokenTimeout = 48 * time.Hour
 )
 
 // TokenManager implements functionality for Access & Refresh tokens generation.
 type TokenManager struct {
-	publicKey  []byte
-	privateKey []byte
+	signingKey string
 }
 
+// NewTokenManager creates new token manager.
 func NewTokenManager(conf *config.JWTConfig) (*TokenManager, error) {
-	privateKey, err := ioutil.ReadFile(conf.PrivateKeyPath)
-	if err != nil {
-		return nil, fmt.Errorf("can't read private key form file: %w", err)
-	}
-	publicKey, err := ioutil.ReadFile(conf.PublicKeyPath)
-	if err != nil {
-		return nil, fmt.Errorf("can't read public key form file: %w", err)
+	if conf.SigningKey == "" {
+		return nil, fmt.Errorf("JWT configuration should not be empty")
 	}
 
-	return &TokenManager{publicKey: publicKey, privateKey: privateKey}, nil
+	return &TokenManager{signingKey: conf.SigningKey}, nil
 }
 
 // GenerateAccessToken generates new access token.
@@ -43,7 +43,7 @@ func (tm *TokenManager) GenerateAccessToken(userID string) (string, error) {
 		IssuedAt:  time.Now().Unix(),
 	})
 
-	return token.SignedString(tm.privateKey)
+	return token.SignedString([]byte(tm.signingKey))
 }
 
 // GenerateRefreshToken generates new refresh token.
@@ -53,23 +53,25 @@ func (tm *TokenManager) GenerateRefreshToken() (string, error) {
 		IssuedAt:  time.Now().Unix(),
 	})
 
-	return token.SignedString(tm.privateKey)
+	return token.SignedString([]byte(tm.signingKey))
 }
 
-//ParseToken parses the given token, checks it validity and returns the user ID.
+// ParseToken parses the given token, checks it validity and returns the user ID.
 func (tm *TokenManager) ParseToken(accessToken string) (string, error) {
-	token, err := jwt.Parse(accessToken, func(token *jwt.Token) (i interface{}, err error) {
+	token, err := jwt.ParseWithClaims(accessToken, &jwt.StandardClaims{}, func(token *jwt.Token) (i interface{}, err error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return jwt.ParseECPublicKeyFromPEM(tm.publicKey)
+		return []byte(tm.signingKey), nil
 	})
 	if err != nil || !token.Valid {
 		return "", fmt.Errorf("can't parse token: %w", err)
 	}
 
-	claims, ok := token.Claims.(jwt.StandardClaims)
+	logger.FromContext(context.Background()).Infoln("token is valid")
+
+	claims, ok := token.Claims.(*jwt.StandardClaims)
 	if !ok {
 		return "", fmt.Errorf("can't get user claims from token")
 	}

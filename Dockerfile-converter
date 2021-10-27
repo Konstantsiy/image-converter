@@ -1,4 +1,4 @@
-FROM golang:latest AS builder
+FROM golang:1.16.8-alpine AS builder
 
 RUN apk add --no-cache git
 
@@ -11,14 +11,14 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o converter ./cmd/converter/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o converter_main ./cmd/converter/main.go
 
 FROM alpine:latest
 
 RUN apk --no-cache add ca-certificates
 
-WORKDIR /
+WORKDIR /app
 
-COPY --from=builder ["/app/converter", "/"]
+COPY --from=builder ["/app/converter_main", "/app"]
 
-ENTRYPOINT ["/converter"]
+CMD ["sh", "-c", "/app/converter_main"]

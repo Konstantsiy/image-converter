@@ -1,43 +1,42 @@
 version: '3'
 services:
   postgresql:
-    image: postgres:latest
+    image: postgres:13-alpine
     restart: always
     container_name: postgresql
     env_file: .env
+    hostname: "postgresql.local"
     ports:
       - 5432:5432
     volumes:
-      - ./scripts:/docker-entrypoint-initdb.d
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./data:/var/lib/postgresql/data/
-    networks:
-      - app_default
 
   rabbitmq:
-    image: rabbitmq:3-management-alpine
+    image: rabbitmq:3.9
     restart: always
     container_name: rabbitmq
-    env_file: .env
     ports:
-    - 5672:5672
-    - 15672:15672
+      - 5672:5672 # AMQP protocol port
+      - 15672:15672 # HTTP management UI
     volumes:
-      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
-      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
-    networks:
-      - app_default
+      - ./docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5672" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   api:
     build:
       context: .
       dockerfile: Dockerfile-api
     container_name: api
+    hostname: "api.local"
     ports:
-    - 8080:8080
+      - 8080:8080
     env_file: .env
     restart: always
-    networks:
-      - app_default
     depends_on:
       - postgresql
       - rabbitmq
@@ -46,18 +45,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-converter
-    container_name: api
+    container_name: converter
+    hostname: "converter.local"
     env_file: .env
     restart: always
-    networks:
-      - app_default
     depends_on:
       - api
       - postgresql
       - rabbitmq
 
 volumes:
+  postgresql:
+    driver: local
   database-data:
-networks:
-  app_default:
-    driver: bridge

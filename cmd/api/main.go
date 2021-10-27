@@ -12,6 +12,7 @@ import (
 func main() {
 	err := app.Start()
 	if err != nil {
-		logger.Error(context.Background(), fmt.Errorf("failed to start app: %v", err))
+		logger.FromContext(context.Background()).
+			Errorln(fmt.Errorf("failed to start app: %v", err))
 	}
 }

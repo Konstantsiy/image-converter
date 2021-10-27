@@ -1,8 +1,8 @@
-select 'create database ita'
-where not exists(select from pg_database where datname = 'ita');
+select 'create database project'
+where not exists(select from pg_database where datname = 'project');
 \gexec
 
-\c ita
+\c project
 
 create schema if not exists converter;
 
@@ -17,7 +17,7 @@ $$;
 do $$
     begin
         if not exists(select 1 from pg_type where typname = 'file_format') then
-            create type file_format as enum ('jpg', 'png');
+            create type file_format as enum ('jpg', 'jpeg', 'png');
         end if;
     end
 $$;

@@ -11,9 +11,12 @@ import (
 )
 
 const (
+	// FormatJPEG represents JPEG image format.
 	FormatJPEG = "jpeg"
-	FormatJPG  = "jpg"
-	FormatPNG  = "png"
+	// FormatJPG represents JPG image format.
+	FormatJPG = "jpg"
+	// FormatPNG represents PNG image format.
+	FormatPNG = "png"
 )
 
 // Convert converts and compresses the given image file according to the target format and compression ratio.

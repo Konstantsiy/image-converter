@@ -7,7 +7,7 @@ import (
 
 // DBConfig required to configure the database.
 type DBConfig struct {
-	Username string `envconfig:"USERNAME"`
+	User     string `envconfig:"USER"`
 	Password string `envconfig:"PASSWORD"`
 	DBName   string `envconfig:"NAME"`
 	Host     string `envconfig:"HOST"`
@@ -25,8 +25,7 @@ type AWSConfig struct {
 
 // JWTConfig required for configuring work with JWT.
 type JWTConfig struct {
-	PublicKeyPath  string `envconfig:"PUBLIC_KEY_PATH"`
-	PrivateKeyPath string `envconfig:"PRIVATE_KEY_PATH"`
+	SigningKey string `envconfig:"SIGNING_KEY"`
 }
 
 // RabbitMQConfig required to configure the RabbitMQ.
@@ -47,6 +46,6 @@ type Config struct {
 // Load loads the necessary configurations.
 func Load() (Config, error) {
 	var c Config
-	err := envconfig.Process("envconfig", &c)
+	err := envconfig.Process("", &c)
 	return c, err
 }
