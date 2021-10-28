@@ -20,7 +20,7 @@ const (
 	passwordOneDigitRegex = "(.*[0-9])"
 
 	// filenameInvalidCharactersRegex searches for special characters in password.
-	filenameInvalidCharactersRegex = "[:#%^;<>\\{}[\\]+~`=?&,\" ]"
+	filenameInvalidCharactersRegex = "[:#%^;<>\\{}[\\]+~`=.?&,\" ]"
 )
 
 const (

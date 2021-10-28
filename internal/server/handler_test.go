@@ -500,7 +500,6 @@ func TestServer_ConvertImage(t *testing.T) {
 				formFileKey: "file",
 				filename:    "Screenshot_1.jpg",
 				params: map[string]string{
-					"sourceFormat": "jpg",
 					"targetFormat": "png",
 					"ratio":        "90",
 				},
@@ -521,7 +520,6 @@ func TestServer_ConvertImage(t *testing.T) {
 				formFileKey: "fill",
 				filename:    "Screenshot_1.jpg",
 				params: map[string]string{
-					"sourceFormat": "jpg",
 					"targetFormat": "png",
 					"ratio":        "90",
 				},
@@ -536,7 +534,6 @@ func TestServer_ConvertImage(t *testing.T) {
 				formFileKey: "file",
 				filename:    "Screenshot_1.jpg",
 				params: map[string]string{
-					"sourceFormat": "jpg",
 					"targetFormat": "png",
 					"ratio":        "ratio_string_value",
 				},
@@ -546,12 +543,11 @@ func TestServer_ConvertImage(t *testing.T) {
 			expectedResponseBody: "invalid ratio form value\n",
 		},
 		{
-			name: "Invalid filename",
+			name: "Invalid filename_1",
 			request: request{
 				formFileKey: "file",
 				filename:    "Screenshot_?.jpg",
 				params: map[string]string{
-					"sourceFormat": "jpg",
 					"targetFormat": "png",
 					"ratio":        "90",
 				},
@@ -561,12 +557,25 @@ func TestServer_ConvertImage(t *testing.T) {
 			expectedResponseBody: "invalid filename: shouldn't contain space and any special characters like :;<>{}[]+=?&,\"\n",
 		},
 		{
+			name: "Invalid filename_2",
+			request: request{
+				formFileKey: "file",
+				filename:    "Screensho.t_123.jpg",
+				params: map[string]string{
+					"targetFormat": "png",
+					"ratio":        "90",
+				},
+			},
+			mockBehavior:         func(s *mockservice.MockImages, p *mockservice.MockProducer, request request) {},
+			expectedStatusCode:   http.StatusBadRequest,
+			expectedResponseBody: "invalid source format: needed jpg or png\n",
+		},
+		{
 			name: "Invalid source format",
 			request: request{
 				formFileKey: "file",
-				filename:    "Screenshot_1.jpg",
+				filename:    "Screensho.t_1jpg",
 				params: map[string]string{
-					"sourceFormat": "jperg",
 					"targetFormat": "png",
 					"ratio":        "90",
 				},
@@ -581,7 +590,6 @@ func TestServer_ConvertImage(t *testing.T) {
 				formFileKey: "file",
 				filename:    "Screenshot_1.jpg",
 				params: map[string]string{
-					"sourceFormat": "jpeg",
 					"targetFormat": "pngdfdf",
 					"ratio":        "90",
 				},
@@ -596,7 +604,6 @@ func TestServer_ConvertImage(t *testing.T) {
 				formFileKey: "file",
 				filename:    "Screenshot_1.jpg",
 				params: map[string]string{
-					"sourceFormat": "jpeg",
 					"targetFormat": "jpg",
 					"ratio":        "90",
 				},
@@ -609,9 +616,8 @@ func TestServer_ConvertImage(t *testing.T) {
 			name: "Invalid ratio",
 			request: request{
 				formFileKey: "file",
-				filename:    "Screenshot_1.jpg",
+				filename:    "Screenshot_1.png",
 				params: map[string]string{
-					"sourceFormat": "png",
 					"targetFormat": "jpeg",
 					"ratio":        "101",
 				},
