@@ -43,10 +43,10 @@ func TestServer_LogIn(t *testing.T) {
 	}{
 		{
 			name:        "Ok",
-			requestBody: `{"email": "email1@gmail.com","password": "password1"}`,
+			requestBody: `{"email": "email1@gmail.com","password": "Password1"}`,
 			request: request{
 				email:    "email1@gmail.com",
-				password: "password1",
+				password: "Password1",
 			},
 			mockBehavior: func(s *mockservice.MockAuthorization, req request) {
 				s.EXPECT().
@@ -262,6 +262,8 @@ func TestServer_SignUp(t *testing.T) {
 }
 
 func TestServer_DownloadImage(t *testing.T) {
+	const defaultImageID = "1"
+
 	testTable := []struct {
 		name                 string
 		imageID              string
@@ -271,11 +273,11 @@ func TestServer_DownloadImage(t *testing.T) {
 	}{
 		{
 			name:    "Ok",
-			imageID: "1",
+			imageID: defaultImageID,
 			mockBehavior: func(s *mockservice.MockImages, id string) {
 				s.EXPECT().
 					Download(gomock.Any(), id).
-					Return("1", nil)
+					Return(defaultImageID, nil)
 			},
 			expectedStatusCode:   http.StatusOK,
 			expectedResponseBody: `{"image_url":"1"}`,
@@ -289,7 +291,7 @@ func TestServer_DownloadImage(t *testing.T) {
 		},
 		{
 			name:    "Cannot get user id from context",
-			imageID: "1",
+			imageID: defaultImageID,
 			mockBehavior: func(s *mockservice.MockImages, id string) {
 				s.EXPECT().
 					Download(gomock.Any(), id).
@@ -303,7 +305,7 @@ func TestServer_DownloadImage(t *testing.T) {
 		},
 		{
 			name:    "No such image",
-			imageID: "1",
+			imageID: defaultImageID,
 			mockBehavior: func(s *mockservice.MockImages, id string) {
 				s.EXPECT().
 					Download(gomock.Any(), id).
@@ -317,7 +319,7 @@ func TestServer_DownloadImage(t *testing.T) {
 		},
 		{
 			name:    "Storage error",
-			imageID: "1",
+			imageID: defaultImageID,
 			mockBehavior: func(s *mockservice.MockImages, id string) {
 				s.EXPECT().
 					Download(gomock.Any(), id).
@@ -481,6 +483,15 @@ func createMockRequest(t *testing.T, filename, formFileKey, url, method string, 
 }
 
 func TestServer_ConvertImage(t *testing.T) {
+	const (
+		defaultFormFile     = "file"
+		defaultFilename     = "Screenshot_1.jpg"
+		targetFormatKey     = "targetFormat"
+		defaultTargetFormat = "png"
+		defaultRatio        = "90"
+		ratioKey            = "ratio"
+	)
+
 	type request struct {
 		formFileKey string
 		filename    string
@@ -497,11 +508,11 @@ func TestServer_ConvertImage(t *testing.T) {
 		{
 			name: "Ok",
 			request: request{
-				formFileKey: "file",
-				filename:    "Screenshot_1.jpg",
+				formFileKey: defaultFormFile,
+				filename:    defaultFilename,
 				params: map[string]string{
-					"targetFormat": "png",
-					"ratio":        "90",
+					targetFormatKey: defaultTargetFormat,
+					ratioKey:        defaultRatio,
 				},
 			},
 			mockBehavior: func(s *mockservice.MockImages, p *mockservice.MockProducer, request request) {
@@ -518,10 +529,10 @@ func TestServer_ConvertImage(t *testing.T) {
 			name: "Invalid file form",
 			request: request{
 				formFileKey: "fill",
-				filename:    "Screenshot_1.jpg",
+				filename:    defaultFilename,
 				params: map[string]string{
-					"targetFormat": "png",
-					"ratio":        "90",
+					targetFormatKey: defaultTargetFormat,
+					ratioKey:        defaultRatio,
 				},
 			},
 			mockBehavior:         func(s *mockservice.MockImages, p *mockservice.MockProducer, request request) {},
@@ -531,11 +542,11 @@ func TestServer_ConvertImage(t *testing.T) {
 		{
 			name: "Invalid ration form value",
 			request: request{
-				formFileKey: "file",
-				filename:    "Screenshot_1.jpg",
+				formFileKey: defaultFormFile,
+				filename:    defaultFilename,
 				params: map[string]string{
-					"targetFormat": "png",
-					"ratio":        "ratio_string_value",
+					targetFormatKey: defaultTargetFormat,
+					ratioKey:        "ratio_string_value",
 				},
 			},
 			mockBehavior:         func(s *mockservice.MockImages, p *mockservice.MockProducer, request request) {},
@@ -545,11 +556,11 @@ func TestServer_ConvertImage(t *testing.T) {
 		{
 			name: "Invalid filename_1",
 			request: request{
-				formFileKey: "file",
+				formFileKey: defaultFormFile,
 				filename:    "Screenshot_?.jpg",
 				params: map[string]string{
-					"targetFormat": "png",
-					"ratio":        "90",
+					targetFormatKey: defaultTargetFormat,
+					ratioKey:        defaultRatio,
 				},
 			},
 			mockBehavior:         func(s *mockservice.MockImages, p *mockservice.MockProducer, request request) {},
@@ -559,11 +570,11 @@ func TestServer_ConvertImage(t *testing.T) {
 		{
 			name: "Invalid filename_2",
 			request: request{
-				formFileKey: "file",
+				formFileKey: defaultFormFile,
 				filename:    "Screensho.t_123.jpg",
 				params: map[string]string{
-					"targetFormat": "png",
-					"ratio":        "90",
+					targetFormatKey: defaultTargetFormat,
+					ratioKey:        defaultRatio,
 				},
 			},
 			mockBehavior:         func(s *mockservice.MockImages, p *mockservice.MockProducer, request request) {},
@@ -573,11 +584,11 @@ func TestServer_ConvertImage(t *testing.T) {
 		{
 			name: "Invalid source format",
 			request: request{
-				formFileKey: "file",
+				formFileKey: defaultFormFile,
 				filename:    "Screensho.t_1jpg",
 				params: map[string]string{
-					"targetFormat": "png",
-					"ratio":        "90",
+					targetFormatKey: defaultTargetFormat,
+					ratioKey:        defaultRatio,
 				},
 			},
 			mockBehavior:         func(s *mockservice.MockImages, p *mockservice.MockProducer, request request) {},
@@ -587,11 +598,11 @@ func TestServer_ConvertImage(t *testing.T) {
 		{
 			name: "Invalid target format",
 			request: request{
-				formFileKey: "file",
-				filename:    "Screenshot_1.jpg",
+				formFileKey: defaultFormFile,
+				filename:    defaultFilename,
 				params: map[string]string{
-					"targetFormat": "pngdfdf",
-					"ratio":        "90",
+					targetFormatKey: "pngdfdf",
+					ratioKey:        defaultRatio,
 				},
 			},
 			mockBehavior:         func(s *mockservice.MockImages, p *mockservice.MockProducer, request request) {},
@@ -601,11 +612,11 @@ func TestServer_ConvertImage(t *testing.T) {
 		{
 			name: "Invalid formats",
 			request: request{
-				formFileKey: "file",
-				filename:    "Screenshot_1.jpg",
+				formFileKey: defaultFormFile,
+				filename:    defaultFilename,
 				params: map[string]string{
-					"targetFormat": "jpg",
-					"ratio":        "90",
+					targetFormatKey: "jpg",
+					ratioKey:        defaultRatio,
 				},
 			},
 			mockBehavior:         func(s *mockservice.MockImages, p *mockservice.MockProducer, request request) {},
@@ -615,11 +626,11 @@ func TestServer_ConvertImage(t *testing.T) {
 		{
 			name: "Invalid ratio",
 			request: request{
-				formFileKey: "file",
-				filename:    "Screenshot_1.png",
+				formFileKey: defaultFormFile,
+				filename:    defaultFilename,
 				params: map[string]string{
-					"targetFormat": "jpeg",
-					"ratio":        "101",
+					targetFormatKey: defaultTargetFormat,
+					ratioKey:        "101",
 				},
 			},
 			mockBehavior:         func(s *mockservice.MockImages, p *mockservice.MockProducer, request request) {},

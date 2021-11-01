@@ -62,7 +62,16 @@ func TestUsersRepository_InsertUser(t *testing.T) {
 
 	usersRepo, err := NewUsersRepository(db)
 	require.NoError(t, err)
-	const query = "INSERT INTO converter.users (.+) RETURNING id"
+
+	const (
+		query = "INSERT INTO converter.users (.+) RETURNING id"
+
+		defaultUserUD   = "1"
+		defaultEmail    = "email1@gmail.com"
+		defaultPassword = "Password1@gmail.com"
+
+		rowUserID = "user_id"
+	)
 
 	testTable := []struct {
 		name            string
@@ -75,12 +84,12 @@ func TestUsersRepository_InsertUser(t *testing.T) {
 		{
 			name: "Ok",
 			args: input{
-				email:    "email1@gmail.com",
-				password: "password1@gmail.com",
+				email:    defaultEmail,
+				password: defaultPassword,
 			},
-			expectedUserID: "1",
+			expectedUserID: defaultUserUD,
 			mockBehavior: func(args input) {
-				rows := sqlmock.NewRows([]string{"user_id"}).AddRow("1")
+				rows := sqlmock.NewRows([]string{rowUserID}).AddRow(defaultUserUD)
 				mock.ExpectQuery(query).
 					WithArgs(args.email, args.password).
 					WillReturnRows(rows)
@@ -90,8 +99,8 @@ func TestUsersRepository_InsertUser(t *testing.T) {
 		{
 			name: "User already exists",
 			args: input{
-				email:    "email1@gmail.com",
-				password: "password1@gmail.com",
+				email:    defaultEmail,
+				password: defaultPassword,
 			},
 			mockBehavior: func(args input) {
 				mock.ExpectQuery(query).
@@ -104,11 +113,11 @@ func TestUsersRepository_InsertUser(t *testing.T) {
 		{
 			name: "Database error",
 			args: input{
-				email:    "email1@gmail.com",
-				password: "password1@gmail.com",
+				email:    defaultEmail,
+				password: defaultPassword,
 			},
 			mockBehavior: func(args input) {
-				rows := sqlmock.NewRows([]string{"id"})
+				rows := sqlmock.NewRows([]string{rowUserID})
 				mock.ExpectQuery(query).
 					WithArgs(args.email, args.password).
 					WillReturnRows(rows)
@@ -140,7 +149,18 @@ func TestUsersRepository_GetUserByEmail(t *testing.T) {
 
 	usersRepo, err := NewUsersRepository(db)
 	require.NoError(t, err)
-	const query = "SELECT (.+) FROM converter.users WHERE (.+)"
+
+	const (
+		query = "SELECT (.+) FROM converter.users WHERE (.+)"
+
+		defaultUserID   = "1"
+		defaultEmail    = "email1@gmail.com"
+		defaultPassword = "Password1"
+
+		rowID       = "ID"
+		rowEmail    = "Email"
+		rowPassword = "Password"
+	)
 
 	testTable := []struct {
 		name            string
@@ -152,15 +172,15 @@ func TestUsersRepository_GetUserByEmail(t *testing.T) {
 	}{
 		{
 			name:  "Ok",
-			email: "email@gmail.com",
+			email: defaultEmail,
 			expectedUser: User{
-				ID:       "1",
-				Email:    "email1@gmail.com",
-				Password: "password1",
+				ID:       defaultUserID,
+				Email:    defaultEmail,
+				Password: defaultPassword,
 			},
 			mockBehavior: func(email string) {
-				rows := sqlmock.NewRows([]string{"ID", "Email", "Password"}).
-					AddRow("1", "email1@gmail.com", "password1")
+				rows := sqlmock.NewRows([]string{rowID, rowEmail, rowPassword}).
+					AddRow("1", "email1@gmail.com", "Password1")
 				mock.ExpectQuery(query).
 					WithArgs(email).
 					WillReturnRows(rows)
@@ -169,7 +189,7 @@ func TestUsersRepository_GetUserByEmail(t *testing.T) {
 		},
 		{
 			name:  "No such user",
-			email: "email@gmail.com",
+			email: defaultEmail,
 			mockBehavior: func(email string) {
 				mock.ExpectQuery(query).
 					WithArgs(email).
@@ -180,9 +200,9 @@ func TestUsersRepository_GetUserByEmail(t *testing.T) {
 		},
 		{
 			name:  "Database error",
-			email: "email@gmail.com",
+			email: defaultEmail,
 			mockBehavior: func(email string) {
-				rows := sqlmock.NewRows([]string{"ID", "Email", "Password"})
+				rows := sqlmock.NewRows([]string{rowID, rowEmail, rowPassword})
 				mock.ExpectQuery(query).
 					WithArgs(email).
 					WillReturnRows(rows)
