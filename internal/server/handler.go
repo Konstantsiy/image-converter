@@ -124,9 +124,9 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 	}
 	defer sourceFile.Close()
 
-	filenameParts := strings.Split(header.Filename, ".")
-	filename := filenameParts[0]
-	sourceFormat := filenameParts[1]
+	parts := strings.Split(header.Filename, ".")
+	sourceFormat := parts[len(parts)-1]
+	filename := strings.TrimSuffix(header.Filename, "."+sourceFormat)
 	targetFormat := r.FormValue("targetFormat")
 	ratio, err := strconv.Atoi(r.FormValue("ratio"))
 	if err != nil {

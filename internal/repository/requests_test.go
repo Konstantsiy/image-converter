@@ -67,18 +67,7 @@ func TestRequestsRepository_InsertRequest(t *testing.T) {
 	requestsRepo, err := NewRequestsRepository(db)
 	require.NoError(t, err)
 
-	const (
-		query = `INSERT INTO converter.requests (.*)`
-
-		defaultUserID   = "1"
-		defaultSourceID = "1"
-		formatJPG       = "jpg"
-		formatJPEG      = "jpeg"
-		formatPNG       = "png"
-		defaultRatio    = 95
-
-		rowID = "id"
-	)
+	const query = `INSERT INTO converter.requests (.*)`
 
 	testTable := []struct {
 		name              string
@@ -90,15 +79,15 @@ func TestRequestsRepository_InsertRequest(t *testing.T) {
 		{
 			name: "Ok",
 			args: input{
-				userID:       defaultUserID,
-				sourceID:     defaultSourceID,
-				sourceFormat: formatJPG,
-				targetFormat: formatPNG,
-				ratio:        defaultRatio,
+				userID:       "1",
+				sourceID:     "1",
+				sourceFormat: "jpg",
+				targetFormat: "png",
+				ratio:        95,
 			},
 			expectedRequestID: "1",
 			mockBehavior: func(args input) {
-				rows := sqlmock.NewRows([]string{rowID}).AddRow("1")
+				rows := sqlmock.NewRows([]string{"id"}).AddRow("1")
 				mock.ExpectQuery(query).
 					WithArgs(args.userID, args.sourceID, args.sourceFormat, args.targetFormat, args.ratio).
 					WillReturnRows(rows)
@@ -108,14 +97,14 @@ func TestRequestsRepository_InsertRequest(t *testing.T) {
 		{
 			name: "Database error",
 			args: input{
-				userID:       defaultUserID,
-				sourceID:     defaultSourceID,
-				sourceFormat: formatJPEG,
-				targetFormat: formatPNG,
+				userID:       "1",
+				sourceID:     "1",
+				sourceFormat: "jpeg",
+				targetFormat: "png",
 				ratio:        80,
 			},
 			mockBehavior: func(args input) {
-				rows := sqlmock.NewRows([]string{rowID})
+				rows := sqlmock.NewRows([]string{"id"})
 				mock.ExpectQuery(query).
 					WithArgs(args.userID, args.sourceID, args.sourceFormat, args.targetFormat, args.ratio).
 					WillReturnRows(rows)
@@ -155,13 +144,7 @@ func TestRequestsRepository_UpdateRequest(t *testing.T) {
 	requestsRepo, err := NewRequestsRepository(db)
 	require.NoError(t, err)
 
-	const (
-		query = `UPDATE converter.requests SET (.+)`
-
-		defaultRequestID = "1"
-		statusDone       = "done"
-		defaultTargetID  = "123"
-	)
+	const query = `UPDATE converter.requests SET (.+)`
 
 	testTable := []struct {
 		name            string
@@ -173,9 +156,9 @@ func TestRequestsRepository_UpdateRequest(t *testing.T) {
 		{
 			name: "Ok",
 			args: input{
-				requestID: defaultRequestID,
-				status:    statusDone,
-				targetID:  defaultTargetID,
+				requestID: "1",
+				status:    "done",
+				targetID:  "123",
 			},
 			expectedError: nil,
 			mockBehavior: func(args input) {
@@ -188,9 +171,9 @@ func TestRequestsRepository_UpdateRequest(t *testing.T) {
 		{
 			name: "Cannot update request",
 			args: input{
-				requestID: defaultRequestID,
-				status:    statusDone,
-				targetID:  defaultTargetID,
+				requestID: "1",
+				status:    "done",
+				targetID:  "123",
 			},
 			expectedError: fmt.Errorf("can't update request"),
 			mockBehavior: func(args input) {
@@ -203,9 +186,9 @@ func TestRequestsRepository_UpdateRequest(t *testing.T) {
 		{
 			name: "Cannot get affected rows",
 			args: input{
-				requestID: defaultRequestID,
-				status:    statusDone,
-				targetID:  defaultTargetID,
+				requestID: "1",
+				status:    "done",
+				targetID:  "123",
 			},
 			expectedError: fmt.Errorf("can't get the number of rows affected by an update"),
 			mockBehavior: func(args input) {
@@ -218,9 +201,9 @@ func TestRequestsRepository_UpdateRequest(t *testing.T) {
 		{
 			name: "No such request",
 			args: input{
-				requestID: defaultRequestID,
-				status:    statusDone,
-				targetID:  defaultTargetID,
+				requestID: "1",
+				status:    "done",
+				targetID:  "123",
 			},
 			expectedError: ErrNoSuchRequest,
 			mockBehavior: func(args input) {

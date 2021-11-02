@@ -37,7 +37,7 @@ func NewTokenManager(conf *config.JWTConfig) (*TokenManager, error) {
 
 // GenerateAccessToken generates new access token.
 func (tm *TokenManager) GenerateAccessToken(userID string) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.StandardClaims{
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
 		Subject:   userID,
 		ExpiresAt: time.Now().Add(AccessTokenTimeout).Unix(),
 		IssuedAt:  time.Now().Unix(),
@@ -48,7 +48,7 @@ func (tm *TokenManager) GenerateAccessToken(userID string) (string, error) {
 
 // GenerateRefreshToken generates new refresh token.
 func (tm *TokenManager) GenerateRefreshToken() (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.StandardClaims{
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
 		ExpiresAt: time.Now().Add(RefreshTokenTimeout).Unix(),
 		IssuedAt:  time.Now().Unix(),
 	})

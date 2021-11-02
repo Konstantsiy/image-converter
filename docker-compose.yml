@@ -21,11 +21,6 @@ services:
       - 15672:15672 # HTTP management UI
     volumes:
       - ./docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
-#    healthcheck:
-#      test: [ "CMD", "curl", "-f", "http://localhost:5672" ]
-#      interval: 30s
-#      timeout: 10s
-#      retries: 5
 
   api:
     build:
@@ -38,8 +33,8 @@ services:
     env_file: .env
     restart: always
     depends_on:
-      - rabbitmq
 #      - postgresql
+      - rabbitmq
 
   converter:
     build:
@@ -51,8 +46,8 @@ services:
     restart: always
     depends_on:
       - api
-      - rabbitmq
 #      - postgresql
+      - rabbitmq
 
 volumes:
 #  postgresql:

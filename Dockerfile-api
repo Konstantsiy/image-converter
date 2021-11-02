@@ -15,8 +15,6 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o api_main ./cmd/api/main.go
 
 FROM alpine:latest
 
-#COPY ./rsa_keys /app/rsa_keys
-
 RUN apk --no-cache add ca-certificates
 
 WORKDIR /app

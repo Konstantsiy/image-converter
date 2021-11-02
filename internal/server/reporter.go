@@ -23,7 +23,6 @@ func sendResponse(w http.ResponseWriter, resp interface{}, statusCode int) {
 	respJSON, err := json.Marshal(resp)
 	if err != nil {
 		logger.FromContext(context.Background()).Errorln(fmt.Errorf("can't marshal loginResponse: %v", err))
-
 		fmt.Fprint(w, resp)
 		return
 	}

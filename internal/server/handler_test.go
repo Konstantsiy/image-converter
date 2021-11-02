@@ -110,6 +110,11 @@ func TestServer_SignUp(t *testing.T) {
 		password string
 	}
 
+	const (
+		defaultEmail    = "email1@gmail.com"
+		defaultPassword = "Password1"
+	)
+
 	testTable := []struct {
 		name                 string
 		requestBody          string
@@ -122,8 +127,8 @@ func TestServer_SignUp(t *testing.T) {
 			name:        "Ok",
 			requestBody: `{"email": "email1@gmail.com","password": "Password1"}`,
 			request: request{
-				email:    "email1@gmail.com",
-				password: "Password1",
+				email:    defaultEmail,
+				password: defaultPassword,
 			},
 			mockBehavior: func(s *mockservice.MockAuthorization, req request) {
 				s.EXPECT().
@@ -138,7 +143,7 @@ func TestServer_SignUp(t *testing.T) {
 			requestBody: `{"email": "1@il.cm","password": "Password1"}`,
 			request: request{
 				email:    "1@il.cm",
-				password: "Password1",
+				password: defaultPassword,
 			},
 			mockBehavior:         func(s *mockservice.MockAuthorization, req request) {},
 			expectedStatusCode:   http.StatusBadRequest,
@@ -146,10 +151,10 @@ func TestServer_SignUp(t *testing.T) {
 		},
 		{
 			name:        "Invalid email format",
-			requestBody: `{"email": "@gmail.com","password": "password1"}`,
+			requestBody: `{"email": "@gmail.com","password": "Password1"}`,
 			request: request{
-				email:    "email1@gmail.com",
-				password: "password1",
+				email:    "@gmail.com",
+				password: defaultPassword,
 			},
 			mockBehavior:         func(s *mockservice.MockAuthorization, req request) {},
 			expectedStatusCode:   http.StatusBadRequest,
@@ -159,7 +164,7 @@ func TestServer_SignUp(t *testing.T) {
 			name:        "Invalid password length",
 			requestBody: `{"email": "email1@gmail.com","password": "rd1"}`,
 			request: request{
-				email:    "email1@gmail.com",
+				email:    defaultEmail,
 				password: "rd1",
 			},
 			mockBehavior:         func(s *mockservice.MockAuthorization, req request) {},
@@ -170,7 +175,7 @@ func TestServer_SignUp(t *testing.T) {
 			name:        "Invalid password no lowercase",
 			requestBody: `{"email": "email1@gmail.com","password": "PASSWORD1"}`,
 			request: request{
-				email:    "email1@gmail.com",
+				email:    defaultEmail,
 				password: "PASSWORD1",
 			},
 			mockBehavior:         func(s *mockservice.MockAuthorization, req request) {},
@@ -181,7 +186,7 @@ func TestServer_SignUp(t *testing.T) {
 			name:        "Invalid password no uppercase",
 			requestBody: `{"email": "email1@gmail.com","password": "password1"}`,
 			request: request{
-				email:    "email1@gmail.com",
+				email:    defaultEmail,
 				password: "password1",
 			},
 			mockBehavior:         func(s *mockservice.MockAuthorization, req request) {},
@@ -192,7 +197,7 @@ func TestServer_SignUp(t *testing.T) {
 			name:        "Invalid password no digit",
 			requestBody: `{"email": "email1@gmail.com","password": "Password"}`,
 			request: request{
-				email:    "email1@gmail.com",
+				email:    defaultEmail,
 				password: "Password",
 			},
 			mockBehavior:         func(s *mockservice.MockAuthorization, req request) {},
@@ -203,8 +208,8 @@ func TestServer_SignUp(t *testing.T) {
 			name:        "User already exists",
 			requestBody: `{"email": "email1@gmail.com","password": "Password1"}`,
 			request: request{
-				email:    "email1@gmail.com",
-				password: "Password1",
+				email:    defaultEmail,
+				password: defaultPassword,
 			},
 			mockBehavior: func(s *mockservice.MockAuthorization, req request) {
 				s.EXPECT().
@@ -221,8 +226,8 @@ func TestServer_SignUp(t *testing.T) {
 			name:        "Cannot generate password hash",
 			requestBody: `{"email": "email1@gmail.com","password": "Password1"}`,
 			request: request{
-				email:    "email1@gmail.com",
-				password: "Password1",
+				email:    defaultEmail,
+				password: defaultPassword,
 			},
 			mockBehavior: func(s *mockservice.MockAuthorization, req request) {
 				s.EXPECT().
@@ -262,8 +267,6 @@ func TestServer_SignUp(t *testing.T) {
 }
 
 func TestServer_DownloadImage(t *testing.T) {
-	const defaultImageID = "1"
-
 	testTable := []struct {
 		name                 string
 		imageID              string
@@ -273,11 +276,11 @@ func TestServer_DownloadImage(t *testing.T) {
 	}{
 		{
 			name:    "Ok",
-			imageID: defaultImageID,
+			imageID: "1",
 			mockBehavior: func(s *mockservice.MockImages, id string) {
 				s.EXPECT().
 					Download(gomock.Any(), id).
-					Return(defaultImageID, nil)
+					Return("1", nil)
 			},
 			expectedStatusCode:   http.StatusOK,
 			expectedResponseBody: `{"image_url":"1"}`,
@@ -291,7 +294,7 @@ func TestServer_DownloadImage(t *testing.T) {
 		},
 		{
 			name:    "Cannot get user id from context",
-			imageID: defaultImageID,
+			imageID: "1",
 			mockBehavior: func(s *mockservice.MockImages, id string) {
 				s.EXPECT().
 					Download(gomock.Any(), id).
@@ -305,7 +308,7 @@ func TestServer_DownloadImage(t *testing.T) {
 		},
 		{
 			name:    "No such image",
-			imageID: defaultImageID,
+			imageID: "1",
 			mockBehavior: func(s *mockservice.MockImages, id string) {
 				s.EXPECT().
 					Download(gomock.Any(), id).
@@ -319,7 +322,7 @@ func TestServer_DownloadImage(t *testing.T) {
 		},
 		{
 			name:    "Storage error",
-			imageID: defaultImageID,
+			imageID: "1",
 			mockBehavior: func(s *mockservice.MockImages, id string) {
 				s.EXPECT().
 					Download(gomock.Any(), id).
@@ -483,20 +486,20 @@ func createMockRequest(t *testing.T, filename, formFileKey, url, method string, 
 }
 
 func TestServer_ConvertImage(t *testing.T) {
-	const (
-		defaultFormFile     = "file"
-		defaultFilename     = "Screenshot_1.jpg"
-		targetFormatKey     = "targetFormat"
-		defaultTargetFormat = "png"
-		defaultRatio        = "90"
-		ratioKey            = "ratio"
-	)
-
 	type request struct {
 		formFileKey string
 		filename    string
 		params      map[string]string
 	}
+
+	const (
+		defaultFileForm     = "file"
+		defaultFilename     = "Screenshot_1.jpg"
+		targetFormatKey     = "targetFormat"
+		defaultTargetFormat = "png"
+		ratioKey            = "ratio"
+		defaultRatio        = "90"
+	)
 
 	testTable := []struct {
 		name                 string
@@ -508,7 +511,7 @@ func TestServer_ConvertImage(t *testing.T) {
 		{
 			name: "Ok",
 			request: request{
-				formFileKey: defaultFormFile,
+				formFileKey: defaultFileForm,
 				filename:    defaultFilename,
 				params: map[string]string{
 					targetFormatKey: defaultTargetFormat,
@@ -542,7 +545,7 @@ func TestServer_ConvertImage(t *testing.T) {
 		{
 			name: "Invalid ration form value",
 			request: request{
-				formFileKey: defaultFormFile,
+				formFileKey: defaultFileForm,
 				filename:    defaultFilename,
 				params: map[string]string{
 					targetFormatKey: defaultTargetFormat,
@@ -554,9 +557,9 @@ func TestServer_ConvertImage(t *testing.T) {
 			expectedResponseBody: "invalid ratio form value\n",
 		},
 		{
-			name: "Invalid filename_1",
+			name: "Invalid filename",
 			request: request{
-				formFileKey: defaultFormFile,
+				formFileKey: defaultFileForm,
 				filename:    "Screenshot_?.jpg",
 				params: map[string]string{
 					targetFormatKey: defaultTargetFormat,
@@ -568,24 +571,10 @@ func TestServer_ConvertImage(t *testing.T) {
 			expectedResponseBody: "invalid filename: shouldn't contain space and any special characters like :;<>{}[]+=?&,\"\n",
 		},
 		{
-			name: "Invalid filename_2",
-			request: request{
-				formFileKey: defaultFormFile,
-				filename:    "Screensho.t_123.jpg",
-				params: map[string]string{
-					targetFormatKey: defaultTargetFormat,
-					ratioKey:        defaultRatio,
-				},
-			},
-			mockBehavior:         func(s *mockservice.MockImages, p *mockservice.MockProducer, request request) {},
-			expectedStatusCode:   http.StatusBadRequest,
-			expectedResponseBody: "invalid source format: needed jpg or png\n",
-		},
-		{
 			name: "Invalid source format",
 			request: request{
-				formFileKey: defaultFormFile,
-				filename:    "Screensho.t_1jpg",
+				formFileKey: defaultFileForm,
+				filename:    "Screenshot_1.jeferepg",
 				params: map[string]string{
 					targetFormatKey: defaultTargetFormat,
 					ratioKey:        defaultRatio,
@@ -598,7 +587,7 @@ func TestServer_ConvertImage(t *testing.T) {
 		{
 			name: "Invalid target format",
 			request: request{
-				formFileKey: defaultFormFile,
+				formFileKey: defaultFileForm,
 				filename:    defaultFilename,
 				params: map[string]string{
 					targetFormatKey: "pngdfdf",
@@ -612,10 +601,10 @@ func TestServer_ConvertImage(t *testing.T) {
 		{
 			name: "Invalid formats",
 			request: request{
-				formFileKey: defaultFormFile,
+				formFileKey: defaultFileForm,
 				filename:    defaultFilename,
 				params: map[string]string{
-					targetFormatKey: "jpg",
+					targetFormatKey: "jpeg",
 					ratioKey:        defaultRatio,
 				},
 			},
@@ -626,7 +615,7 @@ func TestServer_ConvertImage(t *testing.T) {
 		{
 			name: "Invalid ratio",
 			request: request{
-				formFileKey: defaultFormFile,
+				formFileKey: defaultFileForm,
 				filename:    defaultFilename,
 				params: map[string]string{
 					targetFormatKey: defaultTargetFormat,
