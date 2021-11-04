@@ -1,4 +1,9 @@
-version: 2
+version: 2.1
+
+orbs:
+  aws-ecr: circleci/aws-ecr@7.2.0 # Use the AWS ECR orb in your config
+  aws-cli: circleci/aws-cli@1.4
+#  aws-ecs: circleci/aws-ecs@x.y.z # Use the AWS ECS orb in your config
 
 jobs:
   test:
@@ -68,6 +73,21 @@ jobs:
           paths:
             - /home/circleci/go/pkg/mod
 
+  aws-cli-example:
+    executor: aws-cli/default
+    steps:
+      - checkout
+      - aws-cli/setup:
+          profile-name: image-converter
+
+      - aws-ecr/build-and-push-image:
+          dockerfile: Dockerfile-api
+          path: .
+          profile-name: image-converter
+          repo: ${CONVERTER_API}
+          tag: '${CIRCLE_SHA1}'
+          requires:
+            - build
 
 workflows:
   version: 2
@@ -77,4 +97,9 @@ workflows:
       - build:
           requires:
             - test
+  aws-cli:
+    jobs:
+      - aws-cli-example:
+          context: aws
+
 ...
