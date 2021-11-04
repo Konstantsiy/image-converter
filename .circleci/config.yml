@@ -84,7 +84,7 @@ jobs:
           dockerfile: Dockerfile-api
           path: .
           profile-name: image-converter
-          repo: ${CONVERTER_API}
+          repo: $CONVERTER_API
           tag: '${CIRCLE_SHA1}'
 
 workflows:
