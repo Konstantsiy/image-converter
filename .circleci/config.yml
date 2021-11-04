@@ -86,8 +86,6 @@ jobs:
           profile-name: image-converter
           repo: ${CONVERTER_API}
           tag: '${CIRCLE_SHA1}'
-          requires:
-            - build
 
 workflows:
   version: 2
