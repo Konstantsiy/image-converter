@@ -73,19 +73,26 @@ jobs:
           paths:
             - /home/circleci/go/pkg/mod
 
-
 workflows:
   version: 2
   build-workflow:
     jobs:
-      - test
+      - test:
+          context: image_converter
       - build:
+          context: image_converter
           requires:
             - test
       - aws-ecr/build-and-push-image:
+          repo: converter-api-repo
+          tag: "v0.1.${CIRCLE_BUILD_NUM}"
           dockerfile: Dockerfile-api
           path: .
-          region: "${AWS_REGION}"
-          repo: $CONVERTER_API
-          tag: '${CIRCLE_SHA1}'
+          context: image_converter
+#      - aws-ecr/build-and-push-image:
+#          dockerfile: Dockerfile-api
+#          path: .
+#          region: "${AWS_REGION}"
+#          repo: $CONVERTER_API
+#          tag: '${CIRCLE_SHA1}'
 ...
