@@ -82,7 +82,8 @@ workflows:
           requires:
             - test
       - aws-ecr/build-and-push-image:
-          repo: converter-api-repo
+#          repo: converter-api-repo
+          repo: converter.cicd
           tag: "v0.1.${CIRCLE_BUILD_NUM}"
           dockerfile: Dockerfile-api
           path: .
