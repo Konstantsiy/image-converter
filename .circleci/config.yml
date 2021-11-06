@@ -97,9 +97,27 @@ workflows:
           requires:
             - test
       - aws-ecr/build-and-push-image:
-          account-url: AWS_PRIVATE_ECR_ACCOUNT_URL
+          account-url: AWS_PRIVATE_ECR_ACCOUNT_URL_API
           repo: converter.cicd
           tag: "v0.1.${CIRCLE_BUILD_NUM}"
           dockerfile: Dockerfile-api
           path: .
+      - aws-ecr/build-and-push-image:
+          account-url: AWS_PRIVATE_ECR_ACCOUNT_URL_WORKER
+          repo: converter.cicd.worker
+          tag: "v0.1.${CIRCLE_BUILD_NUM}"
+          dockerfile: Dockerfile-converter
+          path: .
+#      - aws-ecr/build-and-push-image:
+#          account-url: AWS_PRIVATE_ECR_ACCOUNT_URL
+#          repo: converter.cicd
+#          tag: "worker/v0.1.${CIRCLE_BUILD_NUM}"
+#          dockerfile: Dockerfile-api
+#          path: .
+#      - aws-ecs/deploy-service-update:
+#          cluster-name: AWS_CLUSTER_NAME
+#          container-image-name-updates: 'container=${MY_APP_PREFIX}-service,tag=${CIRCLE_SHA1}'
+#          family: '${MY_APP_PREFIX}-service'
+#          requires:
+#            - aws-ecr/build-and-push-image
 ...
