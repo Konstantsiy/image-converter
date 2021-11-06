@@ -5,10 +5,10 @@ services:
     image: public.ecr.aws/v1d6i5g3/converter-api-repo:v0.2
     container_name: api
     hostname: "api.local"
-    ports:
-      - 8080:8080
     env_file: .env
     restart: always
+    ports:
+      - 8080:8080
 
   converter:
     image: public.ecr.aws/v1d6i5g3/converter-worker-repo:v0.2
