@@ -1,9 +1,8 @@
 version: 2.1
 
 orbs:
-  aws-ecr: circleci/aws-ecr@7.2.0 # Use the AWS ECR orb in your config
-  aws-cli: circleci/aws-cli@2.0.3
-#  aws-ecs: circleci/aws-ecs@x.y.z # Use the AWS ECS orb in your config
+  aws-ecr: circleci/aws-ecr@7.2.0
+  aws-ecs: circleci/aws-ecs@2.2.1
 
 jobs:
   test:
@@ -73,15 +72,32 @@ jobs:
           paths:
             - /home/circleci/go/pkg/mod
 
+#  deploy:
+#    docker:
+#      - image: cimg/<language>:<version TAG>
+#        auth:
+#          username: $DOCKER_HUB_USER
+#          password: $DOCKER_HUB_PASSWORD
+#    steps:
+#      - name: Push converter api image
+#      - aws-ecr/build-and-push-image:
+#          #repo: converter-api-repo
+#          repo: converter.cicd
+#          tag: "v0.1.${CIRCLE_BUILD_NUM}"
+#          dockerfile: Dockerfile-api
+#          path: .
+
+
 workflows:
   version: 2
-  build-workflow:
+  build-and-deploy:
     jobs:
       - test
       - build:
           requires:
             - test
       - aws-ecr/build-and-push-image:
+          account-url: $AWS_PRIVATE_ECR_ACCOUNT_URL
           repo: converter.cicd
           tag: "v0.1.${CIRCLE_BUILD_NUM}"
           dockerfile: Dockerfile-api
