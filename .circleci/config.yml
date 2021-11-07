@@ -83,7 +83,9 @@ jobs:
       - setup_remote_docker
       - run:
           name: Login to AWS ECR
-          command: aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin 388503763245.dkr.ecr.eu-central-1.amazonaws.com
+          command: |
+            aws ecr get-login-password --region eu-central-1
+            docker login --username AWS --password-stdin 388503763245.dkr.ecr.eu-central-1.amazonaws.com
 
       - run:
           name: Build converter api image
