@@ -137,7 +137,8 @@ workflows:
       - aws-ecs/deploy-service-update:
           cluster-name: AWS_CLUSTER_NAME
           container-image-name-updates: 'container=converter-api,tag=latest'
-          family: converter-service
+          service-name: converter-service
+          family: converter-td-full-private
 #          family: AWS_TASK_DEFINITION_FAMILY
 #          requires:
 #            - aws-ecr/build-and-push-image
