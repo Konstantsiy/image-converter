@@ -73,13 +73,8 @@ jobs:
 #            - /home/circleci/go/pkg/mod
 
   deploy:
-#    docker:
-#      - image: amazon/aws-cli:latest
-#        auth:
-#          username: $DOCKER_HUB_USER
-#          password: $DOCKER_HUB_PASSWORD
     docker:
-      - image: quay/astronomer/ap-airflow:1.10.14-buster
+      - image: amazon/aws-cli:latest
     steps:
       - checkout
       - setup_remote_docker:
