@@ -4,7 +4,7 @@ orbs:
   aws-ecr: circleci/aws-ecr@7.2.0
   aws-ecs: circleci/aws-ecs@2.2.1
 
-#jobs:
+jobs:
 #  test:
 #    docker:
 #      - image: circleci/golang:1.16
