@@ -4,7 +4,7 @@ orbs:
   aws-ecr: circleci/aws-ecr@7.2.0
   aws-ecs: circleci/aws-ecs@2.2.1
 
-jobs:
+#jobs:
 #  test:
 #    docker:
 #      - image: circleci/golang:1.16
@@ -72,50 +72,50 @@ jobs:
 #          paths:
 #            - /home/circleci/go/pkg/mod
 
-  deploy:
-    machine: true
-    steps:
-      - checkout
-
-#      - setup_remote_docker:
-#          version: 19.03.13
-
-      - run:
-          name: Check Docker version
-          command: docker version
-
-      - run:
-          name: Login to AWS ECR
-          command: aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin 388503763245.dkr.ecr.eu-central-1.amazonaws.com
-
-      - run:
-          name: Build converter api image
-          command: docker build -t converter.cicd -f Dockerfile-api .
-
-      - run:
-          name: Build converter worker image
-          command: docker build -t converter.cicd.worker -f Dockerfile-converter .
-
-      - run:
-          name: Tag converter api image
-          command: |
-            docker tag converter.cicd:latest 388503763245.dkr.ecr.eu-central-1.amazonaws.com/converter.cicd:${CIRCLE_BUILD_NUM}
-            docker tag converter.cicd:latest 388503763245.dkr.ecr.eu-central-1.amazonaws.com/converter.cicd:latest
-
-
-      - run:
-          name: Tag converter worker image
-          command: |
-            docker tag converter.cicd.worker:latest 388503763245.dkr.ecr.eu-central-1.amazonaws.com/converter.cicd.worker:${CIRCLE_BUILD_NUM}
-            docker tag converter.cicd.worker:latest 388503763245.dkr.ecr.eu-central-1.amazonaws.com/converter.cicd.worker:latest
-
-      - run:
-          name: Push converter api image to the private repository
-          command: docker push 388503763245.dkr.ecr.eu-central-1.amazonaws.com/converter.cicd
-
-      - run:
-          name: Push converter worker image to the private repository
-          command: docker push 388503763245.dkr.ecr.eu-central-1.amazonaws.com/converter.cicd.worker
+#  deploy:
+#    machine: true
+#    steps:
+#      - checkout
+#
+##      - setup_remote_docker:
+##          version: 19.03.13
+#
+#      - run:
+#          name: Check Docker version
+#          command: docker version
+#
+#      - run:
+#          name: Login to AWS ECR
+#          command: aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin 388503763245.dkr.ecr.eu-central-1.amazonaws.com
+#
+#      - run:
+#          name: Build converter api image
+#          command: docker build -t converter.cicd -f Dockerfile-api .
+#
+#      - run:
+#          name: Build converter worker image
+#          command: docker build -t converter.cicd.worker -f Dockerfile-converter .
+#
+#      - run:
+#          name: Tag converter api image
+#          command: |
+#            docker tag converter.cicd:latest 388503763245.dkr.ecr.eu-central-1.amazonaws.com/converter.cicd:${CIRCLE_BUILD_NUM}
+#            docker tag converter.cicd:latest 388503763245.dkr.ecr.eu-central-1.amazonaws.com/converter.cicd:latest
+#
+#
+#      - run:
+#          name: Tag converter worker image
+#          command: |
+#            docker tag converter.cicd.worker:latest 388503763245.dkr.ecr.eu-central-1.amazonaws.com/converter.cicd.worker:${CIRCLE_BUILD_NUM}
+#            docker tag converter.cicd.worker:latest 388503763245.dkr.ecr.eu-central-1.amazonaws.com/converter.cicd.worker:latest
+#
+#      - run:
+#          name: Push converter api image to the private repository
+#          command: docker push 388503763245.dkr.ecr.eu-central-1.amazonaws.com/converter.cicd
+#
+#      - run:
+#          name: Push converter worker image to the private repository
+#          command: docker push 388503763245.dkr.ecr.eu-central-1.amazonaws.com/converter.cicd.worker
 
 
 workflows:
@@ -142,9 +142,9 @@ workflows:
 #          dockerfile: Dockerfile-converter
 #          path: .
 #-----------------------------------------
-#      - aws-ecs/deploy-service-update:
-#          cluster-name: kostya-regular-cluster
-#          container-image-name-updates: 'container=converter-api,tag=latest'
-#          service-name: converter-service
-#          family: converter-td-full-private
+      - aws-ecs/deploy-service-update:
+          cluster-name: kostya-regular-cluster
+          container-image-name-updates: 'container=converter-api,tag=latest'
+          service-name: converter-smart-service
+          family: converter-td-full-private
 ...
