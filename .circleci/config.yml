@@ -73,16 +73,22 @@ jobs:
 #            - /home/circleci/go/pkg/mod
 
   deploy:
+#    docker:
+#      - image: amazon/aws-cli:latest
+#        auth:
+#          username: $DOCKER_HUB_USER
+#          password: $DOCKER_HUB_PASSWORD
     docker:
-      - image: amazon/aws-cli:latest
-        auth:
-          username: $DOCKER_HUB_USER
-          password: $DOCKER_HUB_PASSWORD
+      - image: quay/astronomer/ap-airflow:1.10.14-buster
     steps:
       - checkout
       - setup_remote_docker:
           version: 19.03.13
           docker_layer_caching: true
+
+      - run:
+          name: Check Docker version
+          command: docker --version
 
       - run:
           name: Login to AWS ECR
