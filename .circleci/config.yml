@@ -74,10 +74,11 @@ jobs:
 
   deploy:
     machine: true
-#    docker:
-#      - image: amazon/aws-cli:latest
     steps:
       - checkout
+
+#      - setup_remote_docker:
+#          version: 19.03.13
 
       - run:
           name: Check Docker version
@@ -93,7 +94,7 @@ jobs:
 
       - run:
           name: Build converter worker image
-          command: docker build -t converter.cicd -f Dockerfile-converter .
+          command: docker build -t converter.cicd.worker -f Dockerfile-converter .
 
       - run:
           name: Tag converter api image
