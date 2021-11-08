@@ -1,4 +1,4 @@
-version: 2
+version: 2.1
 
 orbs:
   aws-ecr: circleci/aws-ecr@7.2.0
@@ -73,17 +73,15 @@ jobs:
 #            - /home/circleci/go/pkg/mod
 
   deploy:
-    docker:
-      - image: amazon/aws-cli:latest
+    machine: true
+#    docker:
+#      - image: amazon/aws-cli:latest
     steps:
       - checkout
-      - setup_remote_docker:
-          version: 19.03.13
-          docker_layer_caching: true
 
       - run:
           name: Check Docker version
-          command: docker --version
+          command: docker version
 
       - run:
           name: Login to AWS ECR
