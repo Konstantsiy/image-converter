@@ -4,73 +4,73 @@ orbs:
   aws-ecr: circleci/aws-ecr@7.2.0
   aws-ecs: circleci/aws-ecs@2.2.1
 
-jobs:
-  test:
-    docker:
-      - image: circleci/golang:1.16
-        auth:
-          username: $DOCKER_HUB_USER
-          password: $DOCKER_HUB_PASSWORD
+#jobs:
+#  test:
+#    docker:
+#      - image: circleci/golang:1.16
+#        auth:
+#          username: $DOCKER_HUB_USER
+#          password: $DOCKER_HUB_PASSWORD
+#
+#    parallelism: 2
+#
+#    environment:
+#      TEST_RESULTS: /tmp/test-results
+#
+#    steps:
+#      - checkout
+#      - run: mkdir -p $TEST_RESULTS
+#
+#      - restore_cache:
+#          keys:
+#            - go-mod-v4-{{ checksum "go.sum" }}
+#
+#      - run:
+#          name: Install dependencies
+#          command: go mod download
+#
+#      - save_cache:
+#          key: v1-pkg-cache
+#          paths:
+#            - /home/circleci/go/pkg/mod
+#
+#      - run:
+#          name: Run unit tests
+#          command: go test ./...
+#
+#      - store_artifacts:
+#          path: $TEST_RESULTS
+#          destination: raw-test-output
+#
+#      - store_test_results:
+#          path: $TEST_RESULTS
 
-    parallelism: 2
-
-    environment:
-      TEST_RESULTS: /tmp/test-results
-
-    steps:
-      - checkout
-      - run: mkdir -p $TEST_RESULTS
-
-      - restore_cache:
-          keys:
-            - go-mod-v4-{{ checksum "go.sum" }}
-
-      - run:
-          name: Install dependencies
-          command: go mod download
-
-      - save_cache:
-          key: v1-pkg-cache
-          paths:
-            - /home/circleci/go/pkg/mod
-
-      - run:
-          name: Run unit tests
-          command: go test ./...
-
-      - store_artifacts:
-          path: $TEST_RESULTS
-          destination: raw-test-output
-
-      - store_test_results:
-          path: $TEST_RESULTS
-
-  build:
-    docker:
-      - image: circleci/golang:1.16
-    environment:
-      GOOS: linux
-      GOARCH: amd64
-      CGO_ENABLED: 0
-
-    steps:
-      - checkout
-      - run:
-          name: Install dependencies
-          command: go mod download
-
-      - run:
-          name: Build api
-          command: go build cmd/api/main.go
-
-      - run:
-          name: Build converter
-          command: go build cmd/converter/main.go
-
-      - save_cache:
-          key: v1-pkg-cache
-          paths:
-            - /home/circleci/go/pkg/mod
+#  build:
+#    docker:
+#      - image: circleci/golang:1.16
+#    environment:
+#      GOOS: linux
+#      GOARCH: amd64
+#      CGO_ENABLED: 0
+#
+#    steps:
+#      - checkout
+#      - run:
+#          name: Install dependencies
+#          command: go mod download
+#
+#      - run:
+#          name: Build api
+#          command: go build cmd/api/main.go
+#
+#      - run:
+#          name: Build converter
+#          command: go build cmd/converter/main.go
+#
+#      - save_cache:
+#          key: v1-pkg-cache
+#          paths:
+#            - /home/circleci/go/pkg/mod
 
 #  deploy:
 #    docker:
@@ -114,27 +114,31 @@ workflows:
   version: 2
   build-and-deploy:
     jobs:
-      - test
-      - build:
-          requires:
-            - test
+#      - test
+#      - build:
+#          requires:
+#            - test
 #      - deploy
-      - aws-ecr/build-and-push-image:
-          account-url: AWS_PRIVATE_ECR_ACCOUNT_URL_API
-          repo: converter.cicd
-          tag: "latest,v0.1.${CIRCLE_SHA1}"
-          dockerfile: Dockerfile-api
-          path: .
+
+#      - aws-ecr/build-and-push-image:
+#          account-url: AWS_PRIVATE_ECR_ACCOUNT_URL_API
+#          repo: converter.cicd
+#          tag: "latest,v0.1.${CIRCLE_BUILD_NUM}"
+#          dockerfile: Dockerfile-api
+#          path: .
+
 #      - aws-ecr/build-and-push-image:
 #          account-url: AWS_PRIVATE_ECR_ACCOUNT_URL_WORKER
 #          repo: converter.cicd.worker
-#          tag: "latest,v0.1.${CIRCLE_SHA1}"
+#          tag: "latest,v0.1.${CIRCLE_BUILD_NUM}"
 #          dockerfile: Dockerfile-converter
 #          path: .
+
       - aws-ecs/deploy-service-update:
           cluster-name: AWS_CLUSTER_NAME
           container-image-name-updates: 'container=converter-api,tag=latest'
-          family: AWS_TASK_DEFINITION_FAMILY
-          requires:
-            - aws-ecr/build-and-push-image
+          family: converter-service
+#          family: AWS_TASK_DEFINITION_FAMILY
+#          requires:
+#            - aws-ecr/build-and-push-image
 ...
