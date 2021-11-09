@@ -72,14 +72,14 @@ jobs:
       - run:
           name: Tag converter api image
           command: |
-            docker tag converter.cicd:latest 388503763245.dkr.ecr.eu-central-1.amazonaws.com/converter.cicd:0.1.${CIRCLE_BUILD_NUM}
+            docker tag converter.cicd:latest 388503763245.dkr.ecr.eu-central-1.amazonaws.com/converter.cicd:v0.1.${CIRCLE_BUILD_NUM}
             docker tag converter.cicd:latest 388503763245.dkr.ecr.eu-central-1.amazonaws.com/converter.cicd:latest
 
 
       - run:
           name: Tag converter worker image
           command: |
-            docker tag converter.cicd.worker:latest 388503763245.dkr.ecr.eu-central-1.amazonaws.com/converter.cicd.worker:0.1.${CIRCLE_BUILD_NUM}
+            docker tag converter.cicd.worker:latest 388503763245.dkr.ecr.eu-central-1.amazonaws.com/converter.cicd.worker:v0.1.${CIRCLE_BUILD_NUM}
             docker tag converter.cicd.worker:latest 388503763245.dkr.ecr.eu-central-1.amazonaws.com/converter.cicd.worker:latest
 
       - run:
