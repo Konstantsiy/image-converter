@@ -104,4 +104,6 @@ workflows:
           container-image-name-updates: 'container=converter-api,tag=latest,container=converter-worker,tag=latest'
           service-name: converter-smart-service
           family: converter-td-full-private
+          requires:
+            - build-and-push
 ...
