@@ -72,7 +72,7 @@ orbs:
 #          paths:
 #            - /home/circleci/go/pkg/mod
 
-#  deploy:
+#  build-and-push:
 #    machine: true
 #    steps:
 #      - checkout
@@ -123,11 +123,9 @@ workflows:
   build-and-deploy:
     jobs:
 #      - test
-#      - build:
+#      - build-and-push:
 #          requires:
 #            - test
-#      - deploy
-
 #      - aws-ecr/build-and-push-image:
 #          account-url: AWS_PRIVATE_ECR_ACCOUNT_URL_API
 #          repo: converter.cicd
