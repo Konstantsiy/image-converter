@@ -142,7 +142,7 @@ workflows:
 #-----------------------------------------
       - aws-ecs/deploy-service-update:
           cluster-name: kostya-regular-cluster
-          container-image-name-updates: 'container=converter-api,tag=latest'
+          container-image-name-updates: 'container=converter-api,tag=latest,container=converter-worker,tag=latest'
           service-name: converter-smart-service
           family: converter-td-full-private
 ...
