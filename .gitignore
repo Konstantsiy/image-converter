@@ -12,6 +12,9 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
+# RSA private key for AWS ECR
+*.pem
+
 # Mock files
 internal/service/mock
 

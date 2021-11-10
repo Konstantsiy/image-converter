@@ -1,2 +1,109 @@
-version: 2
+version: 2.1
 
+orbs:
+  aws-ecr: circleci/aws-ecr@7.2.0
+  aws-ecs: circleci/aws-ecs@2.2.1
+
+jobs:
+  test:
+    docker:
+      - image: circleci/golang:1.16
+        auth:
+          username: $DOCKER_HUB_USER
+          password: $DOCKER_HUB_PASSWORD
+
+    parallelism: 2
+
+    environment:
+      TEST_RESULTS: /tmp/test-results
+
+    steps:
+      - checkout
+      - run: mkdir -p $TEST_RESULTS
+
+      - restore_cache:
+          keys:
+            - go-mod-v4-{{ checksum "go.sum" }}
+
+      - run:
+          name: Install dependencies
+          command: go mod download
+
+      - save_cache:
+          key: v1-pkg-cache
+          paths:
+            - /home/circleci/go/pkg/mod
+
+      - run:
+          name: Run unit tests
+          command: go test ./...
+
+      - store_artifacts:
+          path: $TEST_RESULTS
+          destination: raw-test-output
+
+      - store_test_results:
+          path: $TEST_RESULTS
+
+  build-and-push:
+    machine: true
+    steps:
+      - checkout
+
+#      - setup_remote_docker:
+#          version: 19.03.13
+
+      - run:
+          name: Check Docker version
+          command: docker version
+
+      - run:
+          name: Login to AWS ECR
+          command: aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin 388503763245.dkr.ecr.eu-central-1.amazonaws.com
+
+      - run:
+          name: Build converter api image
+          command: docker build -t converter.cicd -f Dockerfile-api .
+
+      - run:
+          name: Build converter worker image
+          command: docker build -t converter.cicd.worker -f Dockerfile-converter .
+
+      - run:
+          name: Tag converter api image
+          command: |
+            docker tag converter.cicd:latest 388503763245.dkr.ecr.eu-central-1.amazonaws.com/converter.cicd:v0.1.${CIRCLE_BUILD_NUM}
+            docker tag converter.cicd:latest 388503763245.dkr.ecr.eu-central-1.amazonaws.com/converter.cicd:latest
+
+
+      - run:
+          name: Tag converter worker image
+          command: |
+            docker tag converter.cicd.worker:latest 388503763245.dkr.ecr.eu-central-1.amazonaws.com/converter.cicd.worker:v0.1.${CIRCLE_BUILD_NUM}
+            docker tag converter.cicd.worker:latest 388503763245.dkr.ecr.eu-central-1.amazonaws.com/converter.cicd.worker:latest
+
+      - run:
+          name: Push converter api image to the private repository
+          command: docker push 388503763245.dkr.ecr.eu-central-1.amazonaws.com/converter.cicd
+
+      - run:
+          name: Push converter worker image to the private repository
+          command: docker push 388503763245.dkr.ecr.eu-central-1.amazonaws.com/converter.cicd.worker
+
+
+workflows:
+  version: 2
+  build-and-deploy:
+    jobs:
+      - test
+      - build-and-push:
+          requires:
+            - test
+      - aws-ecs/deploy-service-update:
+          cluster-name: kostya-regular-cluster
+          container-image-name-updates: 'container=converter-api,tag=latest,container=converter-worker,tag=latest'
+          service-name: converter-smart-service
+          family: converter-td-full-private
+          requires:
+            - build-and-push
+...

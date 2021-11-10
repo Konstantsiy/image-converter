@@ -124,9 +124,10 @@ func (s *Server) ConvertImage(w http.ResponseWriter, r *http.Request) {
 	}
 	defer sourceFile.Close()
 
-	sourceFormat := r.FormValue("sourceFormat")
-	targetFormat := r.FormValue("targetFormat")
+	parts := strings.Split(header.Filename, ".")
+	sourceFormat := parts[len(parts)-1]
 	filename := strings.TrimSuffix(header.Filename, "."+sourceFormat)
+	targetFormat := r.FormValue("targetFormat")
 	ratio, err := strconv.Atoi(r.FormValue("ratio"))
 	if err != nil {
 		reportErrorWithCode(w, fmt.Errorf("invalid ratio form value"), http.StatusBadRequest)
