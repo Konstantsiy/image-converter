@@ -8,48 +8,25 @@ info:
 servers:
   - url: http://localhost:8080/
     description: API Development Server
+  - url: http://converter-balanser-1194542128.eu-central-1.elb.amazonaws.com
+    description: AWS Load Balanser DNS
 paths:
-  /requests:
-    get:
-      summary: Get user request history
-      tags:
-        - requests
-      security:
-        - bearerAuth: []
-      responses:
-        200:
-          description: The user gets the request history
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RequestsHistoryResponse'
-        401:
-          $ref: '#/components/responses/Unauthorized'
-        500:
-          $ref: '#/components/responses/InternalServerError'
   /user/login:
     post:
       summary: User authorization
       tags:
         - users
       requestBody:
-        $ref: '#/components/requestBodies/UserRequest'
+        $ref: '#/components/requestBodies/AuthRequest'
       responses:
         200:
           description: The user has successfully logged in
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  JWT-token:
-                    type: string
-                    format: JWT
-              example:
-                JWT-token: |
-                  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+                $ref: '#/components/schemas/LoginResponse'
+        400:
+          $ref: '#/components/responses/BadRequest'
         401:
           $ref: '#/components/responses/Unauthorized'
         500:
@@ -60,41 +37,47 @@ paths:
       tags:
         - users
       requestBody:
-        $ref: '#/components/requestBodies/UserRequest'
+        $ref: '#/components/requestBodies/AuthRequest'
       responses:
         201:
           description: The user has successfully registered
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    format: uuid
-              example:
-                id: 7186afcc-cae7-11eb-80ff-0bc45a674b3c
+                $ref: '#/components/schemas/SignUpResponse'
         400:
           $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
         409:
-          $ref: '#/components/responses/UserAlreadyExists'
+          $ref: '#/components/responses/ResourceConflict'
         500:
           $ref: '#/components/responses/InternalServerError'
-  /user/logout:
+  /requests:
     get:
-      summary: Log out of the user
+      summary: Get user request history
       tags:
-        - users
+        - requests
+      security:
+        - bearerAuth: [ ]
       responses:
         200:
-          description: OK
+          description: The user gets the request history
+          content:
+            application/json:
+              schema:
+#                type: array
+                items:
+                  $ref: '#/components/schemas/RequestsHistoryResponse'
+        400:
+          $ref: '#/components/responses/BadRequest'
         401:
           $ref: '#/components/responses/Unauthorized'
         500:
           $ref: '#/components/responses/InternalServerError'
   /conversion:
     post:
-      summary: Create a request to convert an image
+      summary: Create an image conversion request
       tags:
         - images
       security:
@@ -102,18 +85,12 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/ConversionRequest'
       responses:
-        201:
-          description: The request successfully created
+        202:
+          description: The conversion request was successfully created
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    format: uuid
-              example:
-                id: '7186afcc-cae7-11eb-80ff-0bc45a674b3c'
+                $ref: '#/components/schemas/ConversionResponse'
         400:
           $ref: '#/components/responses/BadRequest'
         401:
@@ -130,7 +107,7 @@ paths:
       parameters:
         - name: id
           in: path
-          description: Needed image id
+          description: needed image id
           required: true
           schema:
             type: string
@@ -149,7 +126,7 @@ paths:
                     type: string
                     description: link for download each available file in AWS S3 bucket
               example:
-                link: http(s)://s3.amazonaws.com/path/to/the/file/file_name.extension
+                link: https://name-bucket.s3.eu-central-1.amazonaws.com/6a3a76a0-3f49-11ec-8c53-03492df7f446
         400:
           $ref: '#/components/responses/BadRequest'
         401:
@@ -160,51 +137,90 @@ paths:
           $ref: '#/components/responses/InternalServerError'
 components:
   schemas:
-    RequestsHistoryResponse:
+    LoginResponse:
       type: object
+      properties:
+        access_token:
+          type: string
+          description: generated access token
+        refresh_token:
+          type: string
+          description: generated refresh token
+      example:
+        access_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MzczNTgxNzEsImlhdCI6MTYzNzMxNDk3MSwic3ViIjoiNDNlYjA3NGUtM2YxYy0xMWVjLTg3ZmMtMDIyOTJhYTdmNDQ2In0.x3UPdtg0RvpEA9-0nWV3VOWIFfpJuD4DcQ-kTgbdq-k
+        refresh_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2Mzc0ODc3NzEsImlhdCI6MTYzNzMxNDk3MX0.pzQJ3gj8jdRtpeYhpgkaCRRvoMwMlJz-1iFwxm2FZ2M
+    SignUpResponse:
+      type: object
+      properties:
+        user_id:
+          type: string
+          description: id of the created request
+      example:
+        user_id: 58db242c-4935-11ec-9a01-02292aa7f446
+    RequestsHistoryResponse:
+      type: array
       properties:
         id:
           type: string
           format: uuid
-        name:
-          type: string
-          description: Image name
         source_id:
           type: string
           format: uuid
+          description: source image id
         target_id:
           type: string
           format: uuid
+          description: processed image id
         source_format:
           type: string
           enum: [jpeg, png]
-          description: Source image format
+          description: source image format
         target_format:
           type: string
           enum: [jpeg, png]
-          description: Format to convert the image to
+          description: format to convert the image to
         ratio:
           type: integer
+          description: image compression ratio
         created:
           type: string
           format: timestamp
+          description: request creating time
         updated:
           type: string
           format: timestamp
+          description: request updating time
         status:
           type: string
           enum: [queued, processed, failed, done]
+          description: request processing status
       example:
         id: 7186afcc-cae7-11eb-80ff-0bc45a674b3c
-        name: Screenshot from 2021-06-12 10-44-06.png
-        source_id: 1234fcc-cae7-11eb-80ff-0bc45a674b3d
-        target_id: 7843afcc-cae7-11eb-80ff-0bc45a6743s
+        source_id: 43eb074e-3f1c-11ec-87fc-02292aa7f446
+        target_id: 6904b200-3f49-11ec-816b-02292aa7f446
         source_format: png
-        target_format: jpeg
-        ratio: 3
-        created: 2020-06-11 T 15:17:03 Z
-        updated: 2020-06-11 T 15:21:17 Z
+        target_format: jpg
+        ratio: 95
+        created: 2021-11-06T21:35:07.181954Z
+        updated: 2021-11-06T21:35:09.78527Z
         status: done
+    ConversionResponse:
+      type: object
+      properties:
+        user_id:
+          type: string
+          description: id of the created request
+      example:
+        request_id: 58db242c-4935-11ec-9a01-02292aa7f446
+    DownloadResponse:
+      type: object
+      properties:
+        user_id:
+          type: string
+          description: id of the created request
+      example:
+        user_id: 58db242c-4935-11ec-9a01-02292aa7f446
+
     Error:
       type: object
       properties:
@@ -222,7 +238,7 @@ components:
       bearerFormat: JWT
   #Reusable request bodies
   requestBodies:
-    UserRequest:
+    AuthRequest:
       description: A JSON object represened as user to add to the system
       required: true
       content:
@@ -237,8 +253,8 @@ components:
                 type: string
                 format: password
           example:
-            email: user@gmail.com
-            password: password123
+            email: user1@gmail.com
+            password: Password123
     ConversionRequest:
       description: A JSON object consisting of image file, format to convert, and compression ratio
       required: true
@@ -250,21 +266,19 @@ components:
               file:
                 type: string
                 format: binary
-              source_format:
-                type: string
-                enum: [jpeg, png]
+                description: source image file
               target_format:
                 type: string
-                enum: [jpeg, png]
+                enum: [jpg, jpeg, png]
+                description: format for conversion
               ratio:
                 type: integer
                 minimum: 1
-                maximum: 9
-                description: Image compression ratio
+                maximum: 99
+                description: compression ratio
           example:
             file: sequence of bytes
-            source_format: png
-            target_format: jpeg
+            target_format: png
             ratio: 4
   # Reusable responses, such as 401 Unauthorized or 400 Bad Request
   responses:
@@ -295,7 +309,7 @@ components:
           example:
             statusCode: "404"
             message: The server has not found anything matching the request URI
-    UserAlreadyExists:
+    ResourceConflict:
       description: A similar user is already registered in the system
       content:
         application/json:
@@ -303,7 +317,7 @@ components:
             $ref: '#/components/schemas/Error'
           example:
             statusCode: "409"
-            message: A similar user is already registered in the system
+            message: The request could not be completed due to a conflict with the current state of the resource
     InternalServerError:
       description: The server encountered an unexpected condition which prevented it from fulfilling the request
       content:

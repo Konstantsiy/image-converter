@@ -78,7 +78,7 @@ func (auth *AuthService) SignUp(ctx context.Context, email, password string) (st
 
 	userID, err := auth.usersRepo.InsertUser(ctx, email, hashPwd)
 	if errors.Is(err, repository.ErrUserAlreadyExists) {
-		return "", &ServiceError{err, http.StatusBadRequest}
+		return "", &ServiceError{err, http.StatusConflict}
 	}
 	if err != nil {
 		return "", &ServiceError{err, http.StatusInternalServerError}
