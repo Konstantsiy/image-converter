@@ -37,7 +37,7 @@ func (is *ImageService) Convert(ctx context.Context, sourceFile multipart.File, 
 
 	sourceFileID, err := is.imagesRepo.InsertImage(ctx, filename, sourceFormat)
 	if err != nil {
-		return "", "", &ServiceError{
+		return "", "", &InternalError{
 			fmt.Errorf("repository error: %w", err),
 			http.StatusInternalServerError}
 	}
@@ -46,7 +46,7 @@ func (is *ImageService) Convert(ctx context.Context, sourceFile multipart.File, 
 
 	err = is.s3.UploadFile(sourceFile, sourceFileID)
 	if err != nil {
-		return "", "", &ServiceError{
+		return "", "", &InternalError{
 			fmt.Errorf("s3 error: %w", err),
 			http.StatusInternalServerError}
 	}
@@ -55,7 +55,7 @@ func (is *ImageService) Convert(ctx context.Context, sourceFile multipart.File, 
 
 	requestID, err := is.requestsRepo.InsertRequest(ctx, userID, sourceFileID, sourceFormat, targetFormat, ratio)
 	if err != nil {
-		return "", "", &ServiceError{
+		return "", "", &InternalError{
 			fmt.Errorf("repository error: %w", err),
 			http.StatusInternalServerError}
 	}
@@ -69,7 +69,7 @@ func (is *ImageService) Convert(ctx context.Context, sourceFile multipart.File, 
 func (is *ImageService) Download(ctx context.Context, id string) (string, error) {
 	userID, ok := appcontext.UserIDFromContext(ctx)
 	if !ok {
-		return "", &ServiceError{
+		return "", &InternalError{
 			Err:        fmt.Errorf("can't get user id from application context"),
 			StatusCode: http.StatusUnauthorized,
 		}
@@ -77,15 +77,15 @@ func (is *ImageService) Download(ctx context.Context, id string) (string, error)
 
 	imageID, err := is.imagesRepo.GetImageIDByUserID(ctx, userID, id)
 	if errors.Is(err, repository.ErrNoSuchImage) {
-		return "", &ServiceError{err, http.StatusNotFound}
+		return "", &InternalError{err, http.StatusNotFound}
 	}
 	if err != nil {
-		return "", &ServiceError{err, http.StatusInternalServerError}
+		return "", &InternalError{err, http.StatusInternalServerError}
 	}
 
 	url, err := is.s3.GetDownloadURL(imageID)
 	if err != nil {
-		return "", &ServiceError{err, http.StatusInternalServerError}
+		return "", &InternalError{err, http.StatusInternalServerError}
 	}
 
 	return url, nil

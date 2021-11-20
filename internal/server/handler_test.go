@@ -214,7 +214,7 @@ func TestServer_SignUp(t *testing.T) {
 			mockBehavior: func(s *mockservice.MockAuthorization, req request) {
 				s.EXPECT().
 					SignUp(gomock.Any(), req.email, req.password).
-					Return("", &service.ServiceError{
+					Return("", &service.InternalError{
 						Err:        fmt.Errorf("the user with the given email already exists"),
 						StatusCode: http.StatusBadRequest,
 					})
@@ -232,7 +232,7 @@ func TestServer_SignUp(t *testing.T) {
 			mockBehavior: func(s *mockservice.MockAuthorization, req request) {
 				s.EXPECT().
 					SignUp(gomock.Any(), req.email, req.password).
-					Return("", &service.ServiceError{
+					Return("", &service.InternalError{
 						Err:        fmt.Errorf("cannot generate password hash"),
 						StatusCode: http.StatusInternalServerError,
 					})
@@ -298,7 +298,7 @@ func TestServer_DownloadImage(t *testing.T) {
 			mockBehavior: func(s *mockservice.MockImages, id string) {
 				s.EXPECT().
 					Download(gomock.Any(), id).
-					Return("", &service.ServiceError{
+					Return("", &service.InternalError{
 						Err:        fmt.Errorf("can't get user id from application context"),
 						StatusCode: http.StatusUnauthorized,
 					})
@@ -312,7 +312,7 @@ func TestServer_DownloadImage(t *testing.T) {
 			mockBehavior: func(s *mockservice.MockImages, id string) {
 				s.EXPECT().
 					Download(gomock.Any(), id).
-					Return("", &service.ServiceError{
+					Return("", &service.InternalError{
 						Err:        fmt.Errorf("no such image"),
 						StatusCode: http.StatusNotFound,
 					})
@@ -326,7 +326,7 @@ func TestServer_DownloadImage(t *testing.T) {
 			mockBehavior: func(s *mockservice.MockImages, id string) {
 				s.EXPECT().
 					Download(gomock.Any(), id).
-					Return("", &service.ServiceError{
+					Return("", &service.InternalError{
 						Err:        fmt.Errorf("can't get image url"),
 						StatusCode: http.StatusInternalServerError,
 					})
@@ -399,7 +399,7 @@ func TestServer_GetRequestsHistory(t *testing.T) {
 			mockBehavior: func(s *mockservice.MockRequests) {
 				s.EXPECT().
 					GetUsersRequests(gomock.Any()).
-					Return(nil, &service.ServiceError{
+					Return(nil, &service.InternalError{
 						Err:        fmt.Errorf("can't get user id from application context"),
 						StatusCode: http.StatusInternalServerError,
 					})
@@ -412,7 +412,7 @@ func TestServer_GetRequestsHistory(t *testing.T) {
 			mockBehavior: func(s *mockservice.MockRequests) {
 				s.EXPECT().
 					GetUsersRequests(gomock.Any()).
-					Return(nil, &service.ServiceError{
+					Return(nil, &service.InternalError{
 						Err:        fmt.Errorf("repository error"),
 						StatusCode: http.StatusInternalServerError,
 					})

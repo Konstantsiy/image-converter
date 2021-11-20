@@ -66,7 +66,7 @@ paths:
           content:
             application/json:
               schema:
-#                type: array
+                type: array
                 items:
                   $ref: '#/components/schemas/RequestsHistoryResponse'
         400:
@@ -122,11 +122,11 @@ paths:
               schema:
                 type: object
                 properties:
-                  link:
+                  url:
                     type: string
                     description: link for download each available file in AWS S3 bucket
               example:
-                link: https://name-bucket.s3.eu-central-1.amazonaws.com/6a3a76a0-3f49-11ec-8c53-03492df7f446
+                url: https://name-bucket.s3.eu-central-1.amazonaws.com/6a3a76a0-3f49-11ec-8c53-03492df7f446
         400:
           $ref: '#/components/responses/BadRequest'
         401:
@@ -158,7 +158,7 @@ components:
       example:
         user_id: 58db242c-4935-11ec-9a01-02292aa7f446
     RequestsHistoryResponse:
-      type: array
+      type: object
       properties:
         id:
           type: string
@@ -201,8 +201,8 @@ components:
         source_format: png
         target_format: jpg
         ratio: 95
-        created: 2021-11-06T21:35:07.181954Z
-        updated: 2021-11-06T21:35:09.78527Z
+        created: "2021-11-06T21:35:07.181954Z"
+        updated: "2021-11-06T21:35:09.78527Z"
         status: done
     ConversionResponse:
       type: object
