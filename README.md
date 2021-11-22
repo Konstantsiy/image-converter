@@ -1,6 +1,5 @@
 # image-converter
-
-![example workflow](https://github.com/Konstantsiy/image-converter/workflows/Lint/badge.svg)
+[![Lint](https://github.com/Konstantsiy/image-converter/actions/workflows/lint.yml/badge.svg)](https://github.com/Konstantsiy/image-converter/actions/workflows/lint.yml)
 [![CircleCI](https://circleci.com/gh/circleci/circleci-docs.svg?style=shield)](https://circleci.com/gh/circleci/circleci-docs)
 
 Service that expose a RESTful API to convert JPEG to PNG and vice versa and compress the image 
@@ -46,5 +45,9 @@ AWS_REGION
 AWS_ACCESS_KEY_ID
 AWS_SECRET_ACCESS_KEY
 AWS_BUCKET_NAME
+AWS_CLUSTER_NAME
+AWS_PRIVATE_ECR_ACCOUNT_URL_API
+AWS_PRIVATE_ECR_ACCOUNT_URL_WORKER
+AWS_TASK_DEFINITION_FAMILY
 ```
 
