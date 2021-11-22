@@ -8,13 +8,13 @@ import (
 	"github.com/Konstantsiy/image-converter/internal/repository"
 )
 
-// ServiceError represents service related error.
-type ServiceError struct {
+// InternalError represents service related error.
+type InternalError struct {
 	Err        error
 	StatusCode int
 }
 
-func (e *ServiceError) Error() string {
+func (e *InternalError) Error() string {
 	return e.Err.Error()
 }
 

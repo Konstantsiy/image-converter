@@ -50,9 +50,6 @@ jobs:
     steps:
       - checkout
 
-#      - setup_remote_docker:
-#          version: 19.03.13
-
       - run:
           name: Check Docker version
           command: docker version

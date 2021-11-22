@@ -24,7 +24,7 @@ func NewRequestsService(requestsRepo *repository.RequestsRepository) *RequestsSe
 func (rs *RequestsService) GetUsersRequests(ctx context.Context) ([]repository.ConversionRequest, error) {
 	userID, ok := appcontext.UserIDFromContext(ctx)
 	if !ok {
-		return nil, &ServiceError{
+		return nil, &InternalError{
 			fmt.Errorf("can't get user id from application context"),
 			http.StatusInternalServerError,
 		}
@@ -32,7 +32,7 @@ func (rs *RequestsService) GetUsersRequests(ctx context.Context) ([]repository.C
 
 	requestsHistory, err := rs.requestsRepo.GetRequestsByUserID(ctx, userID)
 	if err != nil {
-		return nil, &ServiceError{err, http.StatusInternalServerError}
+		return nil, &InternalError{err, http.StatusInternalServerError}
 	}
 	return requestsHistory, nil
 }

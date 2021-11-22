@@ -32,20 +32,20 @@ func (auth *AuthService) ParseToken(accessToken string) (string, error) {
 func (auth *AuthService) LogIn(ctx context.Context, email, password string) (string, string, error) {
 	user, err := auth.usersRepo.GetUserByEmail(ctx, email)
 	if err == repository.ErrNoSuchUser {
-		return "", "", &ServiceError{
+		return "", "", &InternalError{
 			Err:        fmt.Errorf("invalid email or password"),
 			StatusCode: http.StatusUnauthorized,
 		}
 	}
 	if err != nil {
-		return "", "", &ServiceError{
+		return "", "", &InternalError{
 			Err:        err,
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
 
 	if ok, err := hash.ComparePasswordHash(password, user.Password); !ok || err != nil {
-		return "", "", &ServiceError{
+		return "", "", &InternalError{
 			Err:        fmt.Errorf("invalid email or password"),
 			StatusCode: http.StatusUnauthorized,
 		}
@@ -70,7 +70,7 @@ func (auth *AuthService) LogIn(ctx context.Context, email, password string) (str
 func (auth *AuthService) SignUp(ctx context.Context, email, password string) (string, error) {
 	hashPwd, err := hash.GeneratePasswordHash(password)
 	if err != nil {
-		return "", &ServiceError{
+		return "", &InternalError{
 			fmt.Errorf("can't generate password hash: %w", err),
 			http.StatusInternalServerError,
 		}
@@ -78,10 +78,10 @@ func (auth *AuthService) SignUp(ctx context.Context, email, password string) (st
 
 	userID, err := auth.usersRepo.InsertUser(ctx, email, hashPwd)
 	if errors.Is(err, repository.ErrUserAlreadyExists) {
-		return "", &ServiceError{err, http.StatusBadRequest}
+		return "", &InternalError{err, http.StatusConflict}
 	}
 	if err != nil {
-		return "", &ServiceError{err, http.StatusInternalServerError}
+		return "", &InternalError{err, http.StatusInternalServerError}
 	}
 
 	return userID, nil

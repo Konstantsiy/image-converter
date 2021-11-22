@@ -43,7 +43,7 @@ func reportErrorWithCode(w http.ResponseWriter, err error, statusCode int) {
 
 // reportError reports custom service error.
 func reportError(w http.ResponseWriter, err error) {
-	subErr, ok := err.(*service.ServiceError)
+	subErr, ok := err.(*service.InternalError)
 	if !ok {
 		reportErrorWithCode(w, err, http.StatusInternalServerError)
 	}
