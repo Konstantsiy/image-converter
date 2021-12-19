@@ -20,11 +20,11 @@ type RabbitMQConsumer struct {
 	client       *rabbitMQClient
 	requestsRepo *repository.RequestsRepository
 	imagesRepo   *repository.ImagesRepository
-	s3           *storage.Storage
+	s3           *storage.S3Storage
 }
 
 // NewRabbitMQConsumer creates new RabbitMQ queue consumer.
-func NewRabbitMQConsumer(requestsRepo *repository.RequestsRepository, imagesRepo *repository.ImagesRepository, s3 *storage.Storage, conf *config.RabbitMQConfig) (*RabbitMQConsumer, error) {
+func NewRabbitMQConsumer(requestsRepo *repository.RequestsRepository, imagesRepo *repository.ImagesRepository, s3 *storage.S3Storage, conf *config.RabbitMQConfig) (*RabbitMQConsumer, error) {
 	client, err := initRabbitMQClient(conf)
 	if err != nil {
 		return nil, err
@@ -90,7 +90,7 @@ func (c *RabbitMQConsumer) consumeFromQueue(ctx context.Context, msg *amqp.Deliv
 	return nil
 }
 
-// process processes the current message from the queue.
+// process the current message from the queue.
 func (c *RabbitMQConsumer) process(ctx context.Context, data queueMessage) error {
 	sourceFile, err := c.s3.DownloadFile(data.FileID)
 	if err != nil {

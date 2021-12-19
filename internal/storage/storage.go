@@ -4,7 +4,7 @@ package storage
 import (
 	"bytes"
 	"fmt"
-	"io"
+	io "io"
 	"io/ioutil"
 	"time"
 
@@ -16,17 +16,24 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
+// Storage represents images storage.
+type Storage interface {
+	UploadFile(file io.ReadSeeker, fileID string) error
+	DownloadFile(fileID string) (io.ReadSeeker, error)
+	GetDownloadURL(fileID string) (string, error)
+}
+
 // URLTimeout determines the validity period of the downloaded image URL.
 const URLTimeout = 10 * time.Minute
 
-// Storage implements the functionality of file storage (Amazon S3).
-type Storage struct {
+// S3Storage implements the functionality of file storage (Amazon S3).
+type S3Storage struct {
 	svc    *s3.S3
 	s3conf *config.AWSConfig
 }
 
 // NewStorage creates new file storage with the given S3 configs and bucket name.
-func NewStorage(s3conf *config.AWSConfig) (*Storage, error) {
+func NewStorage(s3conf *config.AWSConfig) (*S3Storage, error) {
 	err := validateAWSConfig(s3conf)
 	if err != nil {
 		return nil, err
@@ -37,7 +44,7 @@ func NewStorage(s3conf *config.AWSConfig) (*Storage, error) {
 		return nil, err
 	}
 
-	return &Storage{svc: svc, s3conf: s3conf}, nil
+	return &S3Storage{svc: svc, s3conf: s3conf}, nil
 }
 
 // validateAWSConfig validates AWS configurations.
@@ -71,7 +78,7 @@ func createSession(s3conf *config.AWSConfig) (*session.Session, error) {
 }
 
 // UploadFile uploads the given file to the bucket.
-func (s *Storage) UploadFile(file io.ReadSeeker, fileID string) error {
+func (s *S3Storage) UploadFile(file io.ReadSeeker, fileID string) error {
 	_, err := s.svc.PutObject(&s3.PutObjectInput{
 		Body:   file,
 		Bucket: aws.String(s.s3conf.BucketName),
@@ -86,7 +93,7 @@ func (s *Storage) UploadFile(file io.ReadSeeker, fileID string) error {
 }
 
 // DownloadFile downloads a file from the storage by the given id.
-func (s *Storage) DownloadFile(fileID string) (io.ReadSeeker, error) {
+func (s *S3Storage) DownloadFile(fileID string) (io.ReadSeeker, error) {
 	resp, err := s.svc.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(s.s3conf.BucketName),
 		Key:    aws.String(fileID),
@@ -104,7 +111,7 @@ func (s *Storage) DownloadFile(fileID string) (io.ReadSeeker, error) {
 }
 
 // GetDownloadURL returns URL to download а file from the bucket by the given file id.
-func (s *Storage) GetDownloadURL(fileID string) (string, error) {
+func (s *S3Storage) GetDownloadURL(fileID string) (string, error) {
 	req, _ := s.svc.GetObjectRequest(&s3.GetObjectInput{
 		Bucket: aws.String(s.s3conf.BucketName),
 		Key:    aws.String(fileID),

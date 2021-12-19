@@ -19,12 +19,12 @@ import (
 type ImageService struct {
 	imagesRepo   *repository.ImagesRepository
 	requestsRepo *repository.RequestsRepository
-	s3           *storage.Storage
+	s3           *storage.S3Storage
 	producer     *queue.RabbitMQProducer
 }
 
 // NewImageService creates new images service.
-func NewImageService(imagesRepo *repository.ImagesRepository, requestsRepo *repository.RequestsRepository, s3 *storage.Storage, producer *queue.RabbitMQProducer) *ImageService {
+func NewImageService(imagesRepo *repository.ImagesRepository, requestsRepo *repository.RequestsRepository, s3 *storage.S3Storage, producer *queue.RabbitMQProducer) *ImageService {
 	return &ImageService{imagesRepo: imagesRepo, requestsRepo: requestsRepo, s3: s3, producer: producer}
 }
 

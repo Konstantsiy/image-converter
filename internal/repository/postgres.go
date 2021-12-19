@@ -7,7 +7,7 @@ import (
 	"github.com/Konstantsiy/image-converter/internal/config"
 )
 
-// NewPostgresDB opens new postgres connection.
+// NewPostgresDB opens new postgres connection by configuration struct.
 func NewPostgresDB(c *config.DBConfig) (*sql.DB, error) {
 	db, err := sql.Open("postgres", fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=%s",
 		c.Host, c.Port, c.User, c.DBName, c.Password, c.SSLMode))
