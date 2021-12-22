@@ -5,12 +5,45 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"image"
+	"image/color"
+	"image/jpeg"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"testing"
 	"time"
+
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/Konstantsiy/image-converter/internal/repository"
 	"github.com/Konstantsiy/image-converter/pkg/hash"
+)
+
+const (
+	testLoginURL      = "/user/login"
+	testSignUpURL     = "/user/signup"
+	testDownloadURL   = "/images"
+	testConversionURL = "/conversion"
+	testHistoryURL    = "/requests"
+
+	headerTypeKey   = "Content-type"
+	headerTypeValue = "application/json"
+	headerAuthKey   = "Authorization"
+	headerAuthValue = "Bearer "
+
+	defaultEmail        = "email3@gmail.com"
+	defaultPassword     = "Password3"
+	defaultFile         = "file1"
+	defaultFilename     = "Screenshot_1.jpg"
+	defaultSourceFormat = "jpg"
+	defaultTargetFormat = "png"
+	defaultRatio        = "99"
+	defaultImageURL     = "123"
 )
 
 func (s *APITestSuite) truncateTableUsers() {
@@ -22,26 +55,15 @@ func (s *APITestSuite) truncateTableUsers() {
 }
 
 func (s *APITestSuite) TestUserSignIn() {
-	const (
-		defaultEmail    = "email1@gmail.com"
-		defaultPassword = "Password1"
-		testURL         = "/user/login"
-		headerTypeKey   = "Content-type"
-		headerTypeValue = "application/json"
-	)
-
 	signInData := fmt.Sprintf(`{"email":"%s","password":"%s"}`, defaultEmail, defaultPassword)
 	pwdHash, err := hash.GeneratePasswordHash(defaultPassword)
 	s.NoError(err)
 
-	ur, err := repository.NewUsersRepository(s.db)
-	s.NoError(err)
-
-	_, err = ur.InsertUser(context.Background(), defaultEmail, pwdHash)
+	_, err = s.repos.users.InsertUser(context.Background(), defaultEmail, pwdHash)
 	s.NoError(err)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodPost, testURL, bytes.NewBuffer([]byte(signInData)))
+	req, _ := http.NewRequest(http.MethodPost, testLoginURL, bytes.NewBuffer([]byte(signInData)))
 	req.Header.Set(headerTypeKey, headerTypeValue)
 
 	s.router.ServeHTTP(w, req)
@@ -50,18 +72,10 @@ func (s *APITestSuite) TestUserSignIn() {
 }
 
 func (s *APITestSuite) TestUserSignUp() {
-	const (
-		defaultEmail    = "email2@gmail.com"
-		defaultPassword = "Password223"
-		testURL         = "/user/signup"
-		headerTypeKey   = "Content-type"
-		headerTypeValue = "application/json"
-	)
-
 	signUpData := fmt.Sprintf(`{"email" :"%s","password": "%s"}`, defaultEmail, defaultPassword)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodPost, testURL, bytes.NewBuffer([]byte(signUpData)))
+	req, _ := http.NewRequest(http.MethodPost, testSignUpURL, bytes.NewBuffer([]byte(signUpData)))
 	req.Header.Set(headerTypeKey, headerTypeValue)
 
 	s.router.ServeHTTP(w, req)
@@ -88,27 +102,10 @@ func (s *APITestSuite) TestUserSignUp() {
 }
 
 func (s *APITestSuite) TestGetRequestsHistory() {
-	const (
-		defaultEmail        = "email3@gmail.com"
-		defaultPassword     = "Password3"
-		testURL             = "/requests"
-		headerTypeKey       = "Content-type"
-		headerTypeValue     = "application/json"
-		headerAuthKey       = "Authorization"
-		headerAuthValue     = "Bearer "
-		defaultFileName     = "file1"
-		defaultSourceFormat = "jpg"
-		defaultTargetFormat = "png"
-	)
-
-	ur, err := repository.NewUsersRepository(s.db)
-	s.NoError(err)
-	userID, err := ur.InsertUser(context.Background(), defaultEmail, defaultPassword)
+	userID, err := s.repos.users.InsertUser(context.Background(), defaultEmail, defaultPassword)
 	s.NoError(err)
 
-	ir, err := repository.NewImagesRepository(s.db)
-	s.NoError(err)
-	sourceID, err := ir.InsertImage(context.Background(), defaultFileName, defaultSourceFormat)
+	sourceID, err := s.repos.images.InsertImage(context.Background(), defaultFile, defaultSourceFormat)
 	s.NoError(err)
 
 	rr, err := repository.NewRequestsRepository(s.db)
@@ -120,7 +117,7 @@ func (s *APITestSuite) TestGetRequestsHistory() {
 	s.NoError(err)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodGet, testURL, nil)
+	req, _ := http.NewRequest(http.MethodGet, testHistoryURL, nil)
 	req.Header.Set(headerTypeKey, headerTypeValue)
 	req.Header.Set(headerAuthKey, headerAuthValue+jwt)
 
@@ -148,4 +145,99 @@ func (s *APITestSuite) TestGetRequestsHistory() {
 	s.Equal(requestID, history[0].ID)
 	s.Equal(defaultSourceFormat, history[0].SourceFormat)
 	s.Equal(defaultTargetFormat, history[0].TargetFormat)
+}
+
+func (s *APITestSuite) TestDownloadImage() {
+	userID, err := s.repos.users.InsertUser(context.Background(), defaultEmail, defaultPassword)
+	s.NoError(err)
+
+	sourceID, err := s.repos.images.InsertImage(context.Background(), defaultFile, defaultSourceFormat)
+	s.NoError(err)
+
+	_, err = s.repos.requests.InsertRequest(context.Background(), userID, sourceID, defaultSourceFormat, defaultTargetFormat, 99)
+	s.NoError(err)
+
+	jwt, err := s.tm.GenerateAccessToken(userID)
+	s.NoError(err)
+
+	s.mocks.storageMock.EXPECT().GetDownloadURL(sourceID).Return(defaultImageURL, nil)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodGet, testDownloadURL, nil)
+	req.Header.Set(headerTypeKey, headerTypeValue)
+	req.Header.Set(headerAuthKey, headerAuthValue+jwt)
+	q := req.URL.Query()
+	q.Add("id", sourceID)
+	req.URL.RawQuery = q.Encode()
+
+	s.router.ServeHTTP(w, req)
+	s.Equal(http.StatusOK, w.Result().StatusCode)
+
+	type response struct {
+		ImageURL string `json:"image_url"`
+	}
+	var resp response
+
+	err = json.Unmarshal(w.Body.Bytes(), &resp)
+	s.NoError(err)
+
+	s.Equal(resp.ImageURL, defaultImageURL)
+}
+
+func createMockRequest(t *testing.T, url, method string) *http.Request {
+	file, err := os.Create(defaultFilename)
+	require.NoError(t, err)
+	defer func() {
+		err := file.Close()
+		require.NoError(t, err)
+	}()
+
+	img := image.NewRGBA(image.Rect(0, 0, 20, 20))
+	for x := 0; x < 20; x++ {
+		for y := 0; y < 20; y++ {
+			img.Set(x, y, color.White)
+		}
+	}
+
+	err = jpeg.Encode(file, img, nil)
+	require.NoError(t, err)
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	part, err := writer.CreateFormFile("file", filepath.Base(defaultFilename))
+	require.NoError(t, err)
+	_, _ = io.Copy(part, file)
+
+	writer.WriteField("targetFormat", defaultTargetFormat)
+	writer.WriteField("ratio", defaultRatio)
+
+	err = writer.Close()
+	require.NoError(t, err)
+
+	req, err := http.NewRequest(method, url, body)
+	require.NoError(t, err)
+
+	req.Header.Set(headerTypeKey, writer.FormDataContentType())
+
+	return req
+}
+
+func (s *APITestSuite) TestConvertImage() {
+	userID, err := s.repos.users.InsertUser(context.Background(), defaultEmail, defaultPassword)
+	s.NoError(err)
+
+	jwt, err := s.tm.GenerateAccessToken(userID)
+	s.NoError(err)
+
+	s.mocks.storageMock.EXPECT().UploadFile(gomock.Any(), gomock.Any()).Return(nil)
+	s.mocks.producerMock.EXPECT().
+		SendToQueue(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+	w := httptest.NewRecorder()
+	req := createMockRequest(s.T(), testConversionURL, http.MethodPost)
+	defer os.Remove(defaultFilename)
+	req.Header.Set(headerAuthKey, headerAuthValue+jwt)
+
+	s.router.ServeHTTP(w, req)
+	s.Equal(http.StatusAccepted, w.Result().StatusCode)
 }

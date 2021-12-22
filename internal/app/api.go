@@ -73,7 +73,7 @@ func Start() error {
 	}
 
 	authService := service.NewAuthService(usersRepo, tokenManager)
-	imagesService := service.NewImageService(imageRepo, requestsRepo, st, producer)
+	imagesService := service.NewImageService(imageRepo, requestsRepo, st)
 	requestsService := service.NewRequestsService(requestsRepo)
 
 	s := server.NewServer(authService, imagesService, requestsService, producer)

@@ -7,6 +7,12 @@ import (
 	"os"
 	"testing"
 
+	mockqueue "github.com/Konstantsiy/image-converter/internal/queue/mock"
+
+	"github.com/golang/mock/gomock"
+
+	mockstorage "github.com/Konstantsiy/image-converter/internal/storage/mock"
+
 	"github.com/gorilla/mux"
 
 	"github.com/stretchr/testify/suite"
@@ -27,6 +33,21 @@ type APITestSuite struct {
 	serv   *server.Server
 	router *mux.Router
 	tm     *jwt.TokenManager
+
+	repos *repositories
+	mocks *mocks
+	mc    *gomock.Controller
+}
+
+type repositories struct {
+	images   repository.Images
+	requests repository.Requests
+	users    repository.Users
+}
+
+type mocks struct {
+	storageMock  *mockstorage.MockStorage
+	producerMock *mockqueue.MockProducer
 }
 
 func TestAPISuite(t *testing.T) {
@@ -49,10 +70,12 @@ func (s *APITestSuite) SetupSuite() {
 	if err != nil {
 		s.FailWithError(fmt.Errorf("can't load configs: %w", err))
 	}
+	s.initMocks()
 	s.initDependencies(&conf)
 }
 
 func (s *APITestSuite) TearDownSuite() {
+	s.mc.Finish()
 	err := s.db.Close()
 	if err != nil {
 		s.FailWithError(err)
@@ -65,6 +88,14 @@ func (s *APITestSuite) SetupTest() {
 
 func (s *APITestSuite) TearDownTest() {
 	s.truncateTableUsers()
+}
+
+func (s *APITestSuite) initMocks() {
+	s.mc = gomock.NewController(s.T())
+	s.mocks = &mocks{
+		storageMock:  mockstorage.NewMockStorage(s.mc),
+		producerMock: mockqueue.NewMockProducer(s.mc),
+	}
 }
 
 func (s *APITestSuite) initDependencies(conf *config.Config) {
@@ -85,7 +116,7 @@ func (s *APITestSuite) initDependencies(conf *config.Config) {
 		s.FailWithError(fmt.Errorf("users repository creating error: %w", err))
 	}
 
-	imageRepo, err := repository.NewImagesRepository(s.db)
+	imagesRepo, err := repository.NewImagesRepository(s.db)
 	if err != nil {
 		s.FailWithError(fmt.Errorf("images repository creating error: %w", err))
 	}
@@ -95,11 +126,17 @@ func (s *APITestSuite) initDependencies(conf *config.Config) {
 		s.FailWithError(fmt.Errorf("requests repository creating error: %w", err))
 	}
 
+	s.repos = &repositories{
+		users:    usersRepo,
+		images:   imagesRepo,
+		requests: requestsRepo,
+	}
+
 	authService := service.NewAuthService(usersRepo, s.tm)
-	imagesService := service.NewImageService(imageRepo, requestsRepo, nil, nil)
+	imagesService := service.NewImageService(imagesRepo, requestsRepo, s.mocks.storageMock)
 	requestsService := service.NewRequestsService(requestsRepo)
 
-	s.serv = server.NewServer(authService, imagesService, requestsService, nil)
+	s.serv = server.NewServer(authService, imagesService, requestsService, s.mocks.producerMock)
 	s.router = mux.NewRouter()
 	s.serv.RegisterRoutes(s.router)
 }

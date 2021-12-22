@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"io"
+	io "io"
 )
 
 // Storage represents images storage.
