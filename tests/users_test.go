@@ -3,7 +3,6 @@ package tests
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,9 +13,9 @@ import (
 	"github.com/Konstantsiy/image-converter/internal/repository"
 )
 
-func (s *APITestSuite) truncateTableUsers(db *sql.DB) {
+func (s *APITestSuite) truncateTableUsers() {
 	query := "TRUNCATE TABLE converter.users CASCADE;"
-	_, err := db.Exec(query)
+	_, err := s.db.Exec(query)
 	if err != nil {
 		s.FailWithError(fmt.Errorf("unable to truncate users table: %v", err))
 	}
@@ -47,6 +46,7 @@ func (s *APITestSuite) TestUserSignIn() {
 
 	s.router.ServeHTTP(w, req)
 	s.Equal(http.StatusOK, w.Result().StatusCode)
+	s.truncateTableUsers()
 }
 
 func (s *APITestSuite) TestUserSignUp() {
@@ -65,13 +65,13 @@ func (s *APITestSuite) TestUserSignUp() {
 	req.Header.Set(headerTypeKey, headerTypeValue)
 
 	s.router.ServeHTTP(w, req)
-	s.Equal(http.StatusOK, w.Result().StatusCode)
+	s.Equal(http.StatusCreated, w.Result().StatusCode)
 
 	type response struct {
 		UserID string `json:"user_id"`
 	}
 	var resp response
-	err := json.Unmarshal([]byte(w.Body.String()), &resp)
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	s.NoError(err)
 
 	ur, err := repository.NewUsersRepository(s.db)
@@ -84,4 +84,5 @@ func (s *APITestSuite) TestUserSignUp() {
 	equal, err := hash.ComparePasswordHash(defaultPassword, user.Password)
 	s.NoError(err)
 	s.True(equal)
+	s.truncateTableUsers()
 }

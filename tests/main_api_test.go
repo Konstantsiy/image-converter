@@ -43,7 +43,6 @@ func (s *APITestSuite) FailWithError(err error) {
 }
 
 func (s *APITestSuite) SetupSuite() {
-	fmt.Println("---setup suite---")
 	conf, err := config.Load()
 	s.conf = &conf
 	s.NoError(err)
@@ -54,7 +53,6 @@ func (s *APITestSuite) SetupSuite() {
 }
 
 func (s *APITestSuite) TearDownSuite() {
-	fmt.Println("---teardown suite---")
 	err := s.db.Close()
 	if err != nil {
 		s.FailWithError(err)
@@ -62,12 +60,10 @@ func (s *APITestSuite) TearDownSuite() {
 }
 
 func (s *APITestSuite) SetupTest() {
-	fmt.Println("---setup test---")
-	s.truncateTableUsers(s.db)
+	s.truncateTableUsers()
 }
 
 func (s *APITestSuite) initDependencies(conf *config.Config) {
-	fmt.Println("---init deps---")
 	db, err := repository.NewPostgresDB(conf.DBConf)
 	if err != nil {
 		s.FailWithError(fmt.Errorf("can't connect to postgres database: %v", err))
