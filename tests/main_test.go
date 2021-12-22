@@ -63,6 +63,10 @@ func (s *APITestSuite) SetupTest() {
 	s.truncateTableUsers()
 }
 
+func (s *APITestSuite) TearDownTest() {
+	s.truncateTableUsers()
+}
+
 func (s *APITestSuite) initDependencies(conf *config.Config) {
 	db, err := repository.NewPostgresDB(conf.DBConf)
 	if err != nil {
