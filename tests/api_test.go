@@ -46,9 +46,21 @@ const (
 	defaultImageURL     = "123"
 )
 
-func (s *APITestSuite) truncateTableUsers() {
-	query := "TRUNCATE TABLE converter.users CASCADE;"
-	_, err := s.db.Exec(query)
+func (s *APITestSuite) truncateTables() {
+	query1 := "TRUNCATE TABLE converter.users CASCADE;"
+	query2 := "TRUNCATE TABLE converter.images CASCADE;"
+	query3 := "TRUNCATE TABLE converter.requests;"
+
+	_, err := s.db.Exec(query1)
+	if err != nil {
+		s.FailWithError(fmt.Errorf("unable to truncate requests table: %v", err))
+	}
+	_, err = s.db.Exec(query2)
+	if err != nil {
+		s.FailWithError(fmt.Errorf("unable to truncate users table: %v", err))
+	}
+
+	_, err = s.db.Exec(query3)
 	if err != nil {
 		s.FailWithError(fmt.Errorf("unable to truncate users table: %v", err))
 	}
@@ -68,7 +80,7 @@ func (s *APITestSuite) TestUserSignIn() {
 
 	s.router.ServeHTTP(w, req)
 	s.Equal(http.StatusOK, w.Result().StatusCode)
-	s.truncateTableUsers()
+	s.truncateTables()
 }
 
 func (s *APITestSuite) TestUserSignUp() {
@@ -98,7 +110,7 @@ func (s *APITestSuite) TestUserSignUp() {
 	equal, err := hash.ComparePasswordHash(defaultPassword, user.Password)
 	s.NoError(err)
 	s.True(equal)
-	s.truncateTableUsers()
+	s.truncateTables()
 }
 
 func (s *APITestSuite) TestGetRequestsHistory() {

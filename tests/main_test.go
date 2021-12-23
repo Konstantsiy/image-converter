@@ -83,11 +83,11 @@ func (s *APITestSuite) TearDownSuite() {
 }
 
 func (s *APITestSuite) SetupTest() {
-	s.truncateTableUsers()
+	s.truncateTables()
 }
 
 func (s *APITestSuite) TearDownTest() {
-	s.truncateTableUsers()
+	s.truncateTables()
 }
 
 func (s *APITestSuite) initMocks() {
