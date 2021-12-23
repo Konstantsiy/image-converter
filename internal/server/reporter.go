@@ -38,7 +38,9 @@ func sendResponse(w http.ResponseWriter, resp interface{}, statusCode int) {
 // reportErrorWithCode logs and writes an error with the corresponding HTTP code to the ResponseWriter.
 func reportErrorWithCode(w http.ResponseWriter, err error, statusCode int) {
 	logger.FromContext(context.Background()).Errorln(err)
-	http.Error(w, err.Error(), statusCode)
+	sendResponse(w, struct {
+		Message string `json:"message"`
+	}{Message: err.Error()}, statusCode)
 }
 
 // reportError reports custom service error.
