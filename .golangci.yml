@@ -30,6 +30,7 @@ linters:
     - prealloc
     - bodyclose
     - whitespace
+    - typecheck
 
   disable:
     - errcheck

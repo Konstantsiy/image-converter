@@ -64,6 +64,7 @@ func (s *APITestSuite) FailWithError(err error) {
 }
 
 func (s *APITestSuite) SetupSuite() {
+	s.T().Log("setup test suite configuration")
 	conf, err := config.Load()
 	s.conf = &conf
 	s.NoError(err)
@@ -75,6 +76,7 @@ func (s *APITestSuite) SetupSuite() {
 }
 
 func (s *APITestSuite) TearDownSuite() {
+	s.T().Log("tear down test suite: finish mock controller & close database connection")
 	s.mc.Finish()
 	err := s.db.Close()
 	if err != nil {
@@ -83,14 +85,17 @@ func (s *APITestSuite) TearDownSuite() {
 }
 
 func (s *APITestSuite) SetupTest() {
+	s.T().Log("setup test: truncate tables in database")
 	s.truncateTables()
 }
 
 func (s *APITestSuite) TearDownTest() {
+	s.T().Log("tear down test: truncate tables in database")
 	s.truncateTables()
 }
 
 func (s *APITestSuite) initMocks() {
+	s.T().Log("init mocks")
 	s.mc = gomock.NewController(s.T())
 	s.mocks = &mocks{
 		storageMock:  mockstorage.NewMockStorage(s.mc),
@@ -99,18 +104,21 @@ func (s *APITestSuite) initMocks() {
 }
 
 func (s *APITestSuite) initDependencies(conf *config.Config) {
+	s.T().Log("open database connection")
 	db, err := repository.NewPostgresDB(conf.DBConf)
 	if err != nil {
 		s.FailWithError(fmt.Errorf("can't connect to postgres database: %v", err))
 	}
 	s.db = db
 
+	s.T().Log("init token manager")
 	tm, err := jwt.NewTokenManager(conf.JWTConf)
 	if err != nil {
 		s.FailWithError(fmt.Errorf("token manager error: %w", err))
 	}
 	s.tm = tm
 
+	s.T().Log("init repositories")
 	usersRepo, err := repository.NewUsersRepository(s.db)
 	if err != nil {
 		s.FailWithError(fmt.Errorf("users repository creating error: %w", err))
@@ -136,7 +144,29 @@ func (s *APITestSuite) initDependencies(conf *config.Config) {
 	imagesService := service.NewImageService(imagesRepo, requestsRepo, s.mocks.storageMock)
 	requestsService := service.NewRequestsService(requestsRepo)
 
+	s.T().Log("init application server")
 	s.serv = server.NewServer(authService, imagesService, requestsService, s.mocks.producerMock)
 	s.router = mux.NewRouter()
+	s.T().Log("register http routing")
 	s.serv.RegisterRoutes(s.router)
+}
+
+func (s *APITestSuite) truncateTables() {
+	query1 := "TRUNCATE TABLE converter.users CASCADE;"
+	query2 := "TRUNCATE TABLE converter.images CASCADE;"
+	query3 := "TRUNCATE TABLE converter.requests;"
+
+	_, err := s.db.Exec(query1)
+	if err != nil {
+		s.FailWithError(fmt.Errorf("unable to truncate users table: %v", err))
+	}
+	_, err = s.db.Exec(query2)
+	if err != nil {
+		s.FailWithError(fmt.Errorf("unable to truncate images table: %v", err))
+	}
+
+	_, err = s.db.Exec(query3)
+	if err != nil {
+		s.FailWithError(fmt.Errorf("unable to truncate requests table: %v", err))
+	}
 }
