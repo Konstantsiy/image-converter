@@ -10,7 +10,6 @@ import (
 	"github.com/Konstantsiy/image-converter/internal/appcontext"
 	"github.com/Konstantsiy/image-converter/pkg/logger"
 
-	"github.com/Konstantsiy/image-converter/internal/queue"
 	"github.com/Konstantsiy/image-converter/internal/repository"
 	"github.com/Konstantsiy/image-converter/internal/storage"
 )
@@ -19,13 +18,12 @@ import (
 type ImageService struct {
 	imagesRepo   *repository.ImagesRepository
 	requestsRepo *repository.RequestsRepository
-	s3           *storage.Storage
-	producer     *queue.RabbitMQProducer
+	s3           storage.Storage
 }
 
 // NewImageService creates new images service.
-func NewImageService(imagesRepo *repository.ImagesRepository, requestsRepo *repository.RequestsRepository, s3 *storage.Storage, producer *queue.RabbitMQProducer) *ImageService {
-	return &ImageService{imagesRepo: imagesRepo, requestsRepo: requestsRepo, s3: s3, producer: producer}
+func NewImageService(imagesRepo *repository.ImagesRepository, requestsRepo *repository.RequestsRepository, s3 storage.Storage) *ImageService {
+	return &ImageService{imagesRepo: imagesRepo, requestsRepo: requestsRepo, s3: s3}
 }
 
 // Convert converts needed image according to the request.

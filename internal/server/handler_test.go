@@ -135,7 +135,7 @@ func TestServer_SignUp(t *testing.T) {
 					SignUp(gomock.Any(), req.email, req.password).
 					Return("1", nil)
 			},
-			expectedStatusCode:   http.StatusOK,
+			expectedStatusCode:   http.StatusCreated,
 			expectedResponseBody: `{"user_id":"1"}`,
 		},
 		{

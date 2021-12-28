@@ -12,7 +12,7 @@ type Users interface {
 // Images represents images repository.
 type Images interface {
 	InsertImage(ctx context.Context, filename, format string) (string, error)
-	GetImageIDByUserID(ctx context.Context, id string) (string, error)
+	GetImageIDByUserID(ctx context.Context, userID, imageID string) (string, error)
 }
 
 // Requests represents requests repository.

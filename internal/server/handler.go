@@ -112,7 +112,7 @@ func (s *Server) SignUp(w http.ResponseWriter, r *http.Request) {
 		UserID string `json:"user_id"`
 	}
 
-	sendResponse(w, signUpResponse{UserID: userID}, http.StatusOK)
+	sendResponse(w, signUpResponse{UserID: userID}, http.StatusCreated)
 }
 
 // ConvertImage converts needed image according to the request.
